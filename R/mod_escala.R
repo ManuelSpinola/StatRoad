@@ -184,7 +184,14 @@ mod_escala_ui <- function(id) {
                 "azar. Las distancias donde la línea queda ", strong("por encima"),
                 " de la banda (marcadas en naranja) son las distancias a las que los ",
                 "atropellos están más juntos de lo esperable. El tramo donde ",
-                "termina esa zona indica el ", strong("tamaño típico de los grupos"), "."),
+                "termina esa zona indica el ", strong("tamaño típico de los grupos"), ".",
+                tags$br(), tags$br(),
+                bs_icon("info-circle", class = "me-1"),
+                "Si después de esa zona la línea queda ", strong("por debajo"),
+                " de la banda, no significa que los atropellos estén regularmente ",
+                "espaciados: es un efecto de la propia agregación. Si muchos registros ",
+                "se concentran en pocos tramos, entre esos tramos quedan menos registros ",
+                "que el promedio, y a esas distancias aparecen menos pares de los esperados."),
             plotOutput(ns("plot_g"), height = "420px")
           ),
           nav_panel(
