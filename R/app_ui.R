@@ -28,7 +28,12 @@ app_ui <- function() {
         icon  = bsicons::bs_icon("signpost-split"),
         mod_datos_red_ui("datos_red")
       ),
-      # (siguientes: escala, nkde, gistar)
+      bslib::nav_panel(
+        title = "Escala de agregación",
+        icon  = bsicons::bs_icon("rulers"),
+        mod_escala_ui("escala")
+      ),
+      # (siguientes: nkde, gistar)
 
       bslib::nav_spacer(),
 
