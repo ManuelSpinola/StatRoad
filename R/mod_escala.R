@@ -151,10 +151,11 @@ mod_escala_ui <- function(id) {
                 "Ancho del anillo con que se cuenta g. Muy angosto = curva ruidosa; ",
                 "muy ancho = se parece a K."),
               numericInput(ns("nsim"), "Simulaciones de Monte Carlo",
-                           value = 49, min = 19, max = 199, step = 10),
+                           value = 99, min = 19, max = 999, step = 10),
               p(class = "small text-muted mt-n2 mb-3",
-                "Cuántas redes al azar se simulan para construir la banda. 49 es un ",
-                "mínimo razonable; 99 o más da bandas más estables pero tarda más."),
+                "Cuántas veces se colocan los atropellos al azar sobre la ruta para ",
+                "construir la banda. 99 es un buen valor; en una ruta continua el ",
+                "cálculo es rápido incluso con 999."),
               actionButton(ns("ejecutar"), "Calcular K y g",
                            class = "btn-primary w-100 mt-2",
                            icon = icon("play"))
@@ -317,16 +318,28 @@ mod_escala_server <- function(id, datos) {
       res <- withProgress(message = "Calculando K y g en red…",
                           detail = paste(input$nsim, "simulaciones"), value = 0.3, {
         tryCatch({
-          calcular_k_red(
-            lineas   = datos()$red_prep$segmentos,
-            puntos   = pts,
-            dist_max = input$dist_max,
-            paso     = input$paso,
-            ancho_g  = input$ancho_g,
-            nsim     = input$nsim
-          )
+          rp <- datos()$red_prep
+          if (rp$continua) {
+            calcular_k_ruta(
+              x        = pts$km * 1000,
+              L        = as.numeric(sf::st_length(rp$linea)),
+              dist_max = input$dist_max,
+              paso     = input$paso,
+              ancho_g  = input$ancho_g,
+              nsim     = input$nsim
+            )
+          } else {
+            calcular_k_red(
+              lineas   = rp$segmentos,
+              puntos   = pts,
+              dist_max = input$dist_max,
+              paso     = input$paso,
+              ancho_g  = input$ancho_g,
+              nsim     = input$nsim
+            )
+          }
         }, error = function(e) {
-          showNotification(paste("Error en kfunctions:", conditionMessage(e)),
+          showNotification(paste("Error al calcular K:", conditionMessage(e)),
                            type = "error", duration = 10)
           NULL
         })
@@ -349,7 +362,7 @@ mod_escala_server <- function(id, datos) {
           bs_icon("exclamation-circle", class = "me-1"),
           "Aún no se ha calculado K.", tags$br(), tags$br(),
           "Revisa los parámetros y presiona ", strong("\"Calcular K y g\""),
-          ". Con 49 simulaciones y unos 300 registros tarda pocos segundos."
+          ". En una ruta continua tarda un par de segundos."
         ))
       }
       tagList(
@@ -377,6 +390,22 @@ mod_escala_server <- function(id, datos) {
                    "Primero calcula K y g en \"Configurar análisis\"."))
       }
       esc <- r$escala
+      tagList(
+        if (identical(r$metodo, "spNetwork")) {
+          div(class = "alert alert-warning small py-2 px-3 mb-3",
+              bs_icon("exclamation-triangle", class = "me-1"),
+              strong("Red con ramales: "),
+              "K y g se calcularon con spNetwork. Sus simulaciones no son ",
+              "independientes del patrón observado, por lo que la banda puede ",
+              "ser demasiado estrecha y la agregación quedar subestimada. ",
+              "Interpreta con cautela.")
+        } else {
+          div(class = "alert alert-info small py-2 px-3 mb-3",
+              bs_icon("info-circle", class = "me-1"),
+              strong("Ruta continua: "),
+              "cálculo exacto con distancias a lo largo de la vía y ",
+              r$param$nsim, " simulaciones al azar uniforme sobre toda la ruta.")
+        },
       layout_columns(
         col_widths = c(3, 3, 3, 3), fill = FALSE,
         tarjeta_valor(r$n, if (identical(r$grupo, "Todos")) "Registros" else
@@ -386,6 +415,7 @@ mod_escala_server <- function(id, datos) {
         tarjeta_valor(if (is.na(esc$hasta)) "—" else paste(esc$hasta, "m"),
                       "Agregación hasta (g)", colores$acento),
         tarjeta_valor(r$param$nsim, "Simulaciones", colores$texto)
+      )
       )
     })
 
@@ -419,14 +449,48 @@ mod_escala_server <- function(id, datos) {
         return("# Calcula K y g en \"Configurar análisis\" para generar el código.")
       }
       p <- r$param
+      filtro <- if (!identical(r$grupo, "Todos"))
+        paste0("ajustados <- ajustados[ajustados$grupo == \"", r$grupo, "\", ]\n")
+
+      if (identical(r$metodo, "ruta")) {
+        return(paste0(
+          encabezado_script("StatRoad", "Escala de agregación — K y g en una ruta"),
+          "# 'ajustados' (con su columna km) y 'linea' (la ruta como una sola\n",
+          "# línea) vienen del paso de ajuste a la vía.\n",
+          filtro,
+          "x <- ajustados$km * 1000                       # posiciones (m)\n",
+          "L <- as.numeric(sf::st_length(linea))           # longitud (m)\n\n",
+          "# K y g exactos: distancia por la vía = |x_i - x_j|\n",
+          "k_g_ruta <- function(x, L, r, w) {\n",
+          "  n  <- length(x)\n",
+          "  ds <- sort(as.vector(dist(x)))\n",
+          "  f  <- 2 * L / (n * (n - 1))\n",
+          "  hasta <- function(t) findInterval(t, ds)\n",
+          "  inf <- ifelse(r - w / 2 <= 0, -1, r - w / 2)\n",
+          "  list(k = f * hasta(r), g = f * (hasta(r + w / 2) - hasta(inf)))\n",
+          "}\n\n",
+          "r   <- seq(0, ", p$dist_max, ", by = ", p$paso, ")\n",
+          "obs <- k_g_ruta(x, L, r, w = ", p$ancho_g, ")\n\n",
+          "# Envolventes: ", p$nsim, " simulaciones al azar uniforme sobre la ruta\n",
+          "set.seed(2026)\n",
+          "sims  <- replicate(", p$nsim, ", k_g_ruta(runif(length(x), 0, L), L, r, w = ",
+          p$ancho_g, ")$g)\n",
+          "banda <- apply(sims, 1, quantile, probs = c(0.025, 0.975))\n\n",
+          "plot(r, obs$g, type = \"l\", lwd = 2, ylim = range(c(obs$g, banda)),\n",
+          "     xlab = \"Distancia por la vía (m)\", ylab = \"g(r)\")\n",
+          "polygon(c(r, rev(r)), c(banda[1, ], rev(banda[2, ])),\n",
+          "        col = adjustcolor(\"grey\", 0.5), border = NA)\n",
+          "lines(r, obs$g, lwd = 2, col = \"#1170AA\")\n"
+        ))
+      }
+
       paste0(
         encabezado_script("StatRoad", "Escala de agregación — K y g en red"),
         "library(sf)\nlibrary(spNetwork)\n\n",
         "# 'red' y 'ajustados' vienen del paso de ajuste a la vía\n",
         "# (ver el código del módulo \"Datos y red vial\").\n",
         "red <- st_cast(red, \"LINESTRING\")\n",
-        if (!identical(r$grupo, "Todos"))
-          paste0("ajustados <- ajustados[ajustados$grupo == \"", r$grupo, "\", ]\n"),
+        filtro,
         "\nset.seed(2026)\n",
         "k <- kfunctions(\n",
         "  lines  = red,\n",
@@ -452,7 +516,49 @@ mod_escala_server <- function(id, datos) {
 
 # ── Cálculo ───────────────────────────────────────────────
 
-# Envuelve spNetwork::kfunctions() y resume la escala de agregación.
+# K y g en una ruta continua (método exacto).
+# x: posiciones en metros a lo largo de la ruta; L: longitud (m).
+# Distancia por la vía = |x_i - x_j|. Misma normalización que
+# spNetwork: K(r) = L/(n(n-1)) · #pares ordenados con d <= r;
+# g(r) igual, contando pares con d en el anillo (r - w/2, r + w/2].
+# Bajo azar: K(r) ≈ 2r y g(r) ≈ 2w (menos el efecto de borde).
+k_g_ruta <- function(x, L, r, w) {
+  n  <- length(x)
+  ds <- sort(as.vector(stats::dist(x)))        # pares no ordenados
+  f  <- 2 * L / (n * (n - 1))                  # ×2: pares ordenados
+  hasta <- function(t) findInterval(t, ds)     # nº de pares con d <= t
+  inf <- ifelse(r - w / 2 <= 0, -1, r - w / 2)
+  list(
+    k = f * hasta(r),
+    g = f * (hasta(r + w / 2) - hasta(inf))
+  )
+}
+
+# Funciones observadas + envolventes de Monte Carlo (azar uniforme en [0, L])
+calcular_k_ruta <- function(x, L, dist_max, paso, ancho_g, nsim) {
+  r   <- seq(0, dist_max, by = paso)
+  obs <- k_g_ruta(x, L, r, ancho_g)
+  n   <- length(x)
+  sims <- lapply(seq_len(nsim), function(i) {
+    k_g_ruta(stats::runif(n, 0, L), L, r, ancho_g)
+  })
+  sim_k <- vapply(sims, `[[`, numeric(length(r)), "k")
+  sim_g <- vapply(sims, `[[`, numeric(length(r)), "g")
+  q <- function(m) apply(m, 1, stats::quantile, probs = c(0.025, 0.975))
+  ek <- q(sim_k)
+  eg <- q(sim_g)
+
+  valores <- data.frame(
+    distances = r,
+    obs_k = obs$k, lower_k = ek[1, ], upper_k = ek[2, ],
+    obs_g = obs$g, lower_g = eg[1, ], upper_g = eg[2, ]
+  )
+  list(valores = valores, escala = resumir_escala(valores), metodo = "ruta")
+}
+
+# Redes con ramales: spNetwork::kfunctions(). Sus envolventes pueden
+# ser demasiado estrechas (las simulaciones no son independientes del
+# patrón observado); se advierte al usuario.
 calcular_k_red <- function(lineas, puntos, dist_max, paso, ancho_g, nsim) {
   lineas <- sf::st_cast(sf::st_zm(lineas), "LINESTRING", warn = FALSE)
   puntos <- sf::st_zm(puntos)
@@ -479,7 +585,7 @@ calcular_k_red <- function(lineas, puntos, dist_max, paso, ancho_g, nsim) {
          call. = FALSE)
   }
 
-  list(valores = valores, escala = resumir_escala(valores))
+  list(valores = valores, escala = resumir_escala(valores), metodo = "spNetwork")
 }
 
 # Primer tramo continuo de distancias con g por encima de la envolvente.
