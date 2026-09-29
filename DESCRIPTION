@@ -23,6 +23,7 @@ Imports:
     sf,
     shiny,
     shinyjs,
+    spNetwork,
     stats,
     tools,
     utils

@@ -1,3 +1,5 @@
+^renv$
+^renv\.lock$
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^data-raw$
@@ -5,3 +7,7 @@ dev_history.R
 ^dev$
 ^run_dev.*
 ^.here$
+^app\.R$
+^manifest\.json$
+^rsconnect$
+^\.renvignore$
