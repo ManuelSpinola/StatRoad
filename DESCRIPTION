@@ -14,10 +14,17 @@ Imports:
     bsicons,
     bslib,
     config,
+    DT,
     ggplot2,
     golem,
+    leaflet,
+    readr,
+    readxl,
+    sf,
     shiny,
     shinyjs,
+    stats,
+    tools,
     utils
 Config/roxygen2/version: 8.1.0
 Encoding: UTF-8

@@ -23,7 +23,12 @@ app_ui <- function() {
       ),
 
       # ── Módulos activos ───────────────────────────────────
-      # (se agregan aquí: datos_red, exploracion, escala, nkde, gistar)
+      bslib::nav_panel(
+        title = "Datos y red vial",
+        icon  = bsicons::bs_icon("signpost-split"),
+        mod_datos_red_ui("datos_red")
+      ),
+      # (siguientes: escala, nkde, gistar)
 
       bslib::nav_spacer(),
 
