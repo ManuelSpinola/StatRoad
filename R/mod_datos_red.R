@@ -646,9 +646,11 @@ mod_datos_red_server <- function(id) {
         col_widths = c(3, 3, 3, 3), fill = FALSE,
         tarjeta_valor(n_total, "Registros", colores$primario),
         tarjeta_valor(nrow(a$ajustados), "Sobre la vía", colores$secundario),
-        tarjeta_valor(nrow(a$excluidos), "Excluidos", colores$peligro),
+        tarjeta_valor(nrow(a$excluidos),
+                      paste0("Excluidos (> ", a$tolerancia, " m de la vía)"),
+                      colores$peligro),
         tarjeta_valor(paste0(round(stats::median(a$todos$dist_via_m), 1), " m"),
-                      "Distancia mediana", colores$acento)
+                      "Distancia mediana a la vía", colores$acento)
       )
     })
 
