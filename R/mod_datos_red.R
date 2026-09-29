@@ -368,9 +368,10 @@ mod_datos_red_ui <- function(id) {
                 bs_icon("lightbulb", class = "me-1"),
                 "Registros que se usarán en los análisis siguientes, con su ",
                 "distancia original a la vía y su posición en km."),
-            downloadButton(ns("descargar_ajustados"),
-                           "Descargar registros ajustados (.csv)",
-                           class = "btn-outline-primary btn-sm mb-3"),
+            div(class = "d-flex flex-wrap gap-2 mb-3",
+                downloadButton(ns("descargar_ajustados"),
+                               "Descargar registros ajustados (.csv)",
+                               class = "btn-outline-primary btn-sm")),
             DTOutput(ns("tabla_ajustados"))
           )
         )
@@ -586,7 +587,8 @@ mod_datos_red_server <- function(id) {
         red_prep <- preparar_red(red_activa(), crs = as.numeric(input$crs_metrico))
         ajuste   <- ajustar_a_red(atrop_activos(), red_prep, input$tolerancia)
         list(red_prep = red_prep, ajuste = ajuste,
-             crs = as.numeric(input$crs_metrico))
+             crs = as.numeric(input$crs_metrico),
+             ejemplo = !usa_propios())
       }, error = function(e) {
         showNotification(paste("No se pudo ajustar:", conditionMessage(e)),
                          type = "error", duration = 8)

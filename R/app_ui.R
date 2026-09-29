@@ -33,7 +33,12 @@ app_ui <- function() {
         icon  = bsicons::bs_icon("rulers"),
         mod_escala_ui("escala")
       ),
-      # (siguientes: nkde, gistar)
+      bslib::nav_panel(
+        title = "Puntos críticos (KDE)",
+        icon  = bsicons::bs_icon("fire"),
+        mod_nkde_ui("nkde")
+      ),
+      # (siguiente: gistar)
 
       bslib::nav_spacer(),
 

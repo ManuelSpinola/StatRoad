@@ -9,6 +9,9 @@ app_server <- function(input, output, session) {
   # Escala de agregación: su resultado orientará KDE y Gi*
   escala <- mod_escala_server("escala", datos = datos_ajustados)
 
+  # Puntos críticos por KDE en red (usa la escala como ancho de banda sugerido)
+  nkde <- mod_nkde_server("nkde", datos = datos_ajustados, escala = escala)
+
   mod_acerca_de_server("acerca_de")
 
   session$onSessionEnded(function() {})
