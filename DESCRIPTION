@@ -1,0 +1,21 @@
+Package: StatRoad
+Title: Análisis de atropellos de fauna en redes viales
+Version: 0.1.0
+Authors@R: 
+    person("Manuel", "Spínola", , "manuel.spinola@una.ac.cr", role = c("aut", "cre"))
+Description: Aplicación Shiny de StatSuite para escala de agregación,
+    puntos críticos e inferencia de atropellos de fauna sobre redes
+    viales.
+License: What license is it under?
+Imports: 
+    bsicons,
+    bslib,
+    config,
+    ggplot2,
+    golem,
+    shiny,
+    shinyjs
+Config/roxygen2/version: 8.1.0
+Encoding: UTF-8
+LazyData: true
+Date: 2026-09-29
