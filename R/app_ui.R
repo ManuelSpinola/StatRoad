@@ -38,7 +38,11 @@ app_ui <- function() {
         icon  = bsicons::bs_icon("fire"),
         mod_nkde_ui("nkde")
       ),
-      # (siguiente: gistar)
+      bslib::nav_panel(
+        title = "Puntos críticos (Gi*)",
+        icon  = bsicons::bs_icon("grid-1x2"),
+        mod_gistar_ui("gistar")
+      ),
 
       bslib::nav_spacer(),
 

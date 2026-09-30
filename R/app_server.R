@@ -12,6 +12,9 @@ app_server <- function(input, output, session) {
   # Puntos críticos por KDE en red (usa la escala como ancho de banda sugerido)
   nkde <- mod_nkde_server("nkde", datos = datos_ajustados, escala = escala)
 
+  # Puntos críticos por segmentos (Getis-Ord Gi*)
+  gistar <- mod_gistar_server("gistar", datos = datos_ajustados, escala = escala)
+
   mod_acerca_de_server("acerca_de")
 
   session$onSessionEnded(function() {})

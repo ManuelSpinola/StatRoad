@@ -9,7 +9,10 @@
 # ============================================================
 
 # ── Lixels: dividir la ruta en tramos de igual longitud ────
-lixelar_ruta <- function(linea, largo_m) {
+# fusionar_resto = TRUE: si el último tramo queda más corto que la
+# mitad del largo, se une al anterior (útil cuando los tramos se
+# comparan por conteos, como en Gi*).
+lixelar_ruta <- function(linea, largo_m, fusionar_resto = FALSE) {
   xy <- sf::st_coordinates(linea)[, 1:2, drop = FALSE]
   # quitar vértices consecutivos repetidos (tramos de largo cero)
   keep <- c(TRUE, rowSums(diff(xy)^2) > 0)
@@ -20,6 +23,10 @@ lixelar_ruta <- function(linea, largo_m) {
   L      <- cum[length(cum)]
 
   cortes <- unique(c(seq(0, L, by = largo_m), L))
+  if (fusionar_resto && length(cortes) > 2 &&
+      (L - cortes[length(cortes) - 1]) < largo_m / 2) {
+    cortes <- cortes[-(length(cortes) - 1)]
+  }
 
   interp <- function(t) {
     j <- findInterval(t, cum, rightmost.closed = TRUE, all.inside = TRUE)
@@ -107,3 +114,66 @@ puntos_criticos_ruta <- function(lixels, sig, registros_km, registros_grupo) {
   })
   do.call(rbind, filas)
 }
+
+# ── Getis-Ord Gi* en segmentos de una ruta ─────────────────
+# conteos: atropellos por segmento, en orden a lo largo de la ruta.
+# largos:  largo de cada segmento (cualquier unidad).
+# Vecindad binaria: el segmento más k vecinos a cada lado (Gi* incluye
+# al propio segmento). Hipótesis nula: los N registros se distribuyen
+# al azar uniforme a lo largo de la ruta (multinomial con probabilidad
+# proporcional al largo), la misma nula de K y KDE+.
+# Se reporta el z de la simulación: (observado - media) / desviación.
+# El z analítico no se usa: su desviación se calcula con todos los
+# conteos, incluidos los hotspots, y subestima la señal.
+# La permutación condicional (estándar en polígonos) tampoco: con solo
+# 2 vecinos por segmento, fijar el conteo propio deja la prueba casi
+# sin potencia. Valores p corregidos por FDR.
+# bilateral = FALSE (por defecto): prueba unilateral de hotspots, la
+# pregunta de gestión. bilateral = TRUE: también coldspots; ojo, un
+# coldspot significa "por debajo del promedio de toda la ruta, que
+# incluye los puntos críticos", no un tramo sin riesgo.
+gistar_ruta <- function(conteos, largos, k = 1, nsim = 999, bilateral = FALSE) {
+  n <- length(conteos)
+  W <- outer(seq_len(n), seq_len(n), function(i, j) abs(i - j) <= k) * 1
+  obs  <- as.vector(W %*% conteos)
+  sims <- W %*% stats::rmultinom(nsim, sum(conteos), prob = largos / sum(largos))
+
+  media <- rowMeans(sims)
+  desv  <- apply(sims, 1, stats::sd)
+  z     <- ifelse(desv > 0, (obs - media) / desv, 0)
+
+  p <- if (bilateral) {
+    extremos <- pmin(rowSums(sims >= obs), rowSums(sims <= obs))
+    pmin(1, 2 * (extremos + 1) / (nsim + 1))
+  } else {
+    (rowSums(sims >= obs) + 1) / (nsim + 1)
+  }
+
+  data.frame(suma_local = obs, esperado = media, z = z,
+             p_sim = p, p_fdr = stats::p.adjust(p, method = "BH"))
+}
+
+# Categoría de cada segmento según el signo de z y el p corregido
+niveles_gistar <- c("Hotspot 99 %", "Hotspot 95 %", "Hotspot 90 %",
+                    "No significativo",
+                    "Coldspot 90 %", "Coldspot 95 %", "Coldspot 99 %")
+
+clasificar_gistar <- function(z, p, bilateral = FALSE) {
+  nivel <- ifelse(p < 0.01, "99 %", ifelse(p < 0.05, "95 %",
+                  ifelse(p < 0.10, "90 %", NA)))
+  signo_ok <- if (bilateral) TRUE else z > 0
+  cat <- ifelse(is.na(nivel) | is.na(z) | !signo_ok, "No significativo",
+                paste(ifelse(z > 0, "Hotspot", "Coldspot"), nivel))
+  factor(cat, levels = niveles_gistar)
+}
+
+# Colores (Tableau Color Blind): cálidos = hotspot, fríos = coldspot
+colores_gistar <- c(
+  "Hotspot 99 %"     = "#C85200",
+  "Hotspot 95 %"     = "#FC7D0B",
+  "Hotspot 90 %"     = "#F1CE63",
+  "No significativo" = "#A3ACB9",
+  "Coldspot 90 %"    = "#7BC8ED",
+  "Coldspot 95 %"    = "#5FA2CE",
+  "Coldspot 99 %"    = "#1170AA"
+)
