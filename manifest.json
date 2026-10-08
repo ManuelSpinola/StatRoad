@@ -4277,17 +4277,17 @@
     "app.R": {
       "checksum": "5e2a90e274ac8aaabda7c9c15c0f27e4"
     },
-    "data-raw/anfibios_alcantarillas.R": {
-      "checksum": "4f70495da2ac2800e84db82565e2b5c1"
+    "data-raw/cruces_agua_ruta1.gpkg": {
+      "checksum": "1fb079090a8afb9f41e29c584e5fe1a5"
     },
-    "data-raw/atropellos_simulados_santarosa.R": {
-      "checksum": "8bad5d3994ab3588c8f925275d120c46"
+    "data-raw/ejemplo_ruta1_larga.R": {
+      "checksum": "93673e024d83db1e1f0a9f9abbc3c821"
     },
-    "data-raw/estructuras_simuladas.R": {
-      "checksum": "8ce43122984ad3790b9276e59310151a"
+    "data-raw/red_ruta1_larga.gpkg": {
+      "checksum": "113779fa3d693565910c3251187f5632"
     },
-    "data-raw/red_ruta1_santarosa.R": {
-      "checksum": "97fb6613111d5c999b837302f9b5ea1c"
+    "data-raw/red_ruta1_larga.R": {
+      "checksum": "d8a4e44c3f679dd81854c730399f109d"
     },
     "DESCRIPTION": {
       "checksum": "496d8fff4f27a66ea88abc88ede1fd58"
@@ -4313,17 +4313,17 @@
     "inst/app/www/hexsticker_StatRoad.png": {
       "checksum": "d0fa887d45877e107ceda3737f355417"
     },
-    "inst/extdata/atropellos_simulados_santarosa.csv": {
-      "checksum": "554f801c7eb51852198db7e61c026887"
+    "inst/extdata/atropellos_ruta1_larga.csv": {
+      "checksum": "3072d6c542043416f326062e6e26201d"
     },
-    "inst/extdata/estructuras_simuladas_santarosa.csv": {
-      "checksum": "2135d0fd881332527cbcbf20b4b65639"
+    "inst/extdata/estructuras_ruta1_larga.csv": {
+      "checksum": "a7e940a791b2368436a22f18cf0c4847"
     },
-    "inst/extdata/hotspots_verdaderos_santarosa.csv": {
-      "checksum": "ba0925ee75d34ff602d45e57637ad732"
+    "inst/extdata/hotspots_verdaderos_ruta1_larga.csv": {
+      "checksum": "ebeca8598e415b40f44d8651109e7128"
     },
-    "inst/extdata/red_ruta1_santarosa.gpkg": {
-      "checksum": "ade6430883fc48b689066c4539b4efb1"
+    "inst/extdata/red_ruta1_larga.gpkg": {
+      "checksum": "68cd25ef3ef13fcffdf966256f38ebcb"
     },
     "inst/golem-config.yml": {
       "checksum": "21ded1476e73d8a72ac5d2f20ddebd78"
@@ -4346,6 +4346,9 @@
     "R/app_ui.R": {
       "checksum": "35d58bc18d712e4b6500ff700a0d03b3"
     },
+    "R/datos_ejemplo.R": {
+      "checksum": "6c3a1a5f1ffb58fbb93caf326339ac8b"
+    },
     "R/fct_estructuras.R": {
       "checksum": "f25c72f25c6c9256fed133cf9ed277ce"
     },
@@ -4359,25 +4362,25 @@
       "checksum": "ec42f5604c1b958076a8770219a371be"
     },
     "R/mod_datos_red.R": {
-      "checksum": "b4661b68388232a009c77e9d854bc3bd"
+      "checksum": "d89f447fff13b6e3c6310e872dfe6601"
     },
     "R/mod_escala.R": {
       "checksum": "9cc88e6c02c7603b5bfa8437f03e619e"
     },
     "R/mod_estructuras.R": {
-      "checksum": "1f1a719036e02f50552a271fd5ca0147"
+      "checksum": "d09dd131b30ee96b145eb333f5760e87"
     },
     "R/mod_gistar.R": {
-      "checksum": "a7c0c8bb85aae7bf7fcfc7f053262eb2"
+      "checksum": "97895acffe29b67d6af8d8f9cd60772f"
     },
     "R/mod_nkde.R": {
-      "checksum": "f8744675468311058d89254536e536f3"
+      "checksum": "af747c5fe2e8d344376cae1fb1468341"
     },
     "R/run_app.R": {
       "checksum": "287f04c2233556b41f012539ebb32e6d"
     },
     "R/utils_espacial.R": {
-      "checksum": "ddd68953f1ea4d77d0247191830c8087"
+      "checksum": "c8d61e53c9ffc976c4968582f5e4d71d"
     },
     "R/utils_exportar.R": {
       "checksum": "4f7759584cd2905fad99011f8ea37701"
