@@ -2,8 +2,8 @@
 # mod_datos_red.R — Datos, red vial y ajuste de registros a la vía
 # StatRoad · StatSuite · Manuel Spínola · ICOMVIS · UNA
 #
-# Datos de ejemplo: red real de la Ruta 1 (zona PN Santa Rosa, OSM)
-# con atropellos SIMULADOS (ver data-raw/). Mis datos: red vial
+# Datos de ejemplo: red real de la Ruta 1 entre Liberia y La Cruz
+# (OSM) con atropellos SIMULADOS (ver data-raw/ y datos_ejemplo.R). Mis datos: red vial
 # (GPKG, GeoJSON, Shapefile .zip) + atropellos (CSV, Excel o capa
 # de puntos). Funciones de lectura y ajuste en utils_espacial.R.
 #
@@ -110,18 +110,18 @@ mod_datos_red_ui <- function(id) {
                 div(
                   class = "alert alert-info small py-2 px-3 mb-3",
                   bs_icon("info-circle-fill", class = "me-1"),
-                  strong("Ruta 1 (Interamericana Norte), zona del PN Santa Rosa, ",
+                  strong("Ruta 1 (Interamericana Norte), entre Liberia y La Cruz, ",
                          "Área de Conservación Guanacaste."),
                   tags$br(), tags$br(),
-                  strong("Red vial real"), " (~19 km) descargada de OpenStreetMap ",
+                  strong("Red vial real"), " (~51 km) descargada de OpenStreetMap ",
                   "(© colaboradores de OpenStreetMap, ODbL).",
                   tags$br(), tags$br(),
-                  strong("Atropellos simulados"), " (308 registros, 2024–2025) con ",
-                  "características conocidas: 3 puntos críticos de ~1 km (H1–H3, dominados ",
-                  "por anfibios, mamíferos y reptiles), un pulso de anfibios al inicio de ",
-                  "las lluvias, anfibios concentrados junto a las alcantarillas, error de ",
-                  "GPS de 5–30 m y 6 registros a más de 100 m de la vía. Las ubicaciones ",
-                  "son arbitrarias."
+                  strong("Atropellos simulados"), " (1380 registros, 2024–2025) con ",
+                  "características conocidas: 6 puntos críticos de ~500 m (H1–H6), cuatro ",
+                  "junto a alcantarillas o puentes y dos lejos de ellos; anfibios ",
+                  "concentrados junto a las alcantarillas, con un pulso al inicio de las ",
+                  "lluvias; error de GPS de 5–30 m y 28 registros a más de 100 m de la vía. ",
+                  "Las ubicaciones de los puntos críticos son arbitrarias."
                 ),
                 downloadButton(ns("descargar_red_ejemplo"),
                                "Descargar red de ejemplo (.gpkg)",
@@ -400,8 +400,8 @@ mod_datos_red_server <- function(id) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    ruta_red_ejemplo   <- app_sys("extdata", "red_ruta1_santarosa.gpkg")
-    ruta_atrop_ejemplo <- app_sys("extdata", "atropellos_simulados_santarosa.csv")
+    ruta_red_ejemplo   <- archivo_ejemplo("red")
+    ruta_atrop_ejemplo <- archivo_ejemplo("atropellos")
 
     # ────────────────────────────────────────────────────
     # DATOS DE EJEMPLO
@@ -426,11 +426,11 @@ mod_datos_red_server <- function(id) {
     })
 
     output$descargar_red_ejemplo <- downloadHandler(
-      filename = function() "red_ruta1_santarosa.gpkg",
+      filename = function() basename(ruta_red_ejemplo),
       content  = function(file) file.copy(ruta_red_ejemplo, file)
     )
     output$descargar_atrop_ejemplo <- downloadHandler(
-      filename = function() "atropellos_simulados_santarosa.csv",
+      filename = function() basename(ruta_atrop_ejemplo),
       content  = function(file) file.copy(ruta_atrop_ejemplo, file)
     )
     output$descargar_plantilla <- downloadHandler(
@@ -526,7 +526,7 @@ mod_datos_red_server <- function(id) {
           bs_icon("info-circle", class = "me-1"),
           strong("Datos en uso: "),
           if (usa_propios()) "tus datos" else
-            "datos de ejemplo (Ruta 1, PN Santa Rosa; atropellos simulados)")
+            "datos de ejemplo (Ruta 1, Liberia–La Cruz; atropellos simulados)")
     })
 
     # ────────────────────────────────────────────────────
@@ -752,8 +752,8 @@ mod_datos_red_server <- function(id) {
       }
       codigo_ajuste(
         propios    = usa_propios(),
-        nombre_red = if (usa_propios()) input$archivo_red$name else "red_ruta1_santarosa.gpkg",
-        nombre_atr = if (usa_propios()) input$archivo_atrop$name else "atropellos_simulados_santarosa.csv",
+        nombre_red = if (usa_propios()) input$archivo_red$name else basename(ruta_red_ejemplo),
+        nombre_atr = if (usa_propios()) input$archivo_atrop$name else basename(ruta_atrop_ejemplo),
         crs_coords = if (usa_propios()) input$crs_coords else 4326,
         separador  = input$separador,
         crs        = r$crs,

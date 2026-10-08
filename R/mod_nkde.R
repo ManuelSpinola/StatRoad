@@ -516,7 +516,7 @@ mod_nkde_server <- function(id, datos, escala) {
         theme_light(base_size = 13)
 
       if (isTRUE(input$mostrar_verdad) && isTRUE(datos()$ejemplo)) {
-        verdad <- utils::read.csv(app_sys("extdata", "hotspots_verdaderos_santarosa.csv"),
+        verdad <- utils::read.csv(archivo_ejemplo("verdad"),
                                   fileEncoding = "UTF-8")
         g <- g +
           geom_vline(data = verdad, aes(xintercept = centro_km),

@@ -12,7 +12,7 @@
 # Modelo nulo: desplazamiento circular de los atropellos (las
 # estructuras quedan fijas). Funciones en fct_estructuras.R.
 #
-# Datos de ejemplo: 17 estructuras SIMULADAS (data-raw/).
+# Datos de ejemplo: 43 estructuras de la Ruta 1 (data-raw/, datos_ejemplo.R).
 # Recibe el resultado de mod_datos_red_server().
 # ============================================================
 
@@ -172,14 +172,15 @@ mod_estructuras_ui <- function(id) {
                 div(
                   class = "alert alert-info small py-2 px-3 mb-3",
                   bs_icon("info-circle-fill", class = "me-1"),
-                  strong("17 estructuras simuladas"), " sobre la Ruta 1 (PN Santa Rosa): ",
-                  "15 alcantarillas y 2 puentes.", tags$br(), tags$br(),
-                  "Lo sembrado: 5 alcantarillas agrupadas en el punto crítico H1 ",
-                  "(anfibios); el resto al azar fuera de H1–H3, de modo que H2 ",
-                  "(mamíferos) y H3 (reptiles) no tienen estructuras. Los atropellos ",
-                  "de ejemplo incluyen anfibios concentrados junto a cada alcantarilla. ",
-                  "Una alcantarilla está a ~150 m de la vía (error de digitación) ",
-                  "para que el ajuste la excluya."
+                  strong("43 estructuras"), " sobre la Ruta 1, entre Liberia y La Cruz: ",
+                  "4 puentes y 3 alcantarillas en ", strong("cruces reales"),
+                  " con ríos y quebradas (OpenStreetMap), y 36 alcantarillas simuladas.",
+                  tags$br(), tags$br(),
+                  "Lo sembrado: 4 de los 6 puntos críticos (H1–H4) están junto a una ",
+                  "estructura; H5 y H6, no. Además, parte de los anfibios se atropella ",
+                  "junto a las alcantarillas, como si cruzaran por los drenajes. Una ",
+                  "alcantarilla está a ~150 m de la vía (error de digitación) para ",
+                  "que el ajuste la excluya."
                 ),
                 downloadButton(ns("descargar_est_ejemplo"),
                                "Descargar estructuras de ejemplo (.csv)",
@@ -411,7 +412,7 @@ mod_estructuras_server <- function(id, datos) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    ruta_est_ejemplo <- app_sys("extdata", "estructuras_simuladas_santarosa.csv")
+    ruta_est_ejemplo <- archivo_ejemplo("estructuras")
 
     output$plot_idea <- renderPlot(figura_idea_nulo())
 
@@ -429,7 +430,7 @@ mod_estructuras_server <- function(id, datos) {
     })
 
     output$descargar_est_ejemplo <- downloadHandler(
-      filename = function() "estructuras_simuladas_santarosa.csv",
+      filename = function() basename(ruta_est_ejemplo),
       content  = function(file) file.copy(ruta_est_ejemplo, file)
     )
     output$descargar_plantilla <- downloadHandler(
@@ -688,7 +689,7 @@ mod_estructuras_server <- function(id, datos) {
       req(r)
       if (!isTRUE(r$ejemplo)) return(NULL)
       checkboxInput(ns("mostrar_verdad"),
-                    "Mostrar los puntos críticos sembrados en la simulación (H1–H3)",
+                    "Mostrar los puntos críticos sembrados en la simulación (H1–H6)",
                     value = FALSE, width = "100%")
     })
 
@@ -710,7 +711,7 @@ mod_estructuras_server <- function(id, datos) {
         theme_light(base_size = 13)
 
       if (isTRUE(input$mostrar_verdad) && isTRUE(r$ejemplo)) {
-        verdad <- utils::read.csv(app_sys("extdata", "hotspots_verdaderos_santarosa.csv"),
+        verdad <- utils::read.csv(archivo_ejemplo("verdad"),
                                   fileEncoding = "UTF-8")
         g <- g +
           geom_vline(data = verdad, aes(xintercept = centro_km), color = colores$peligro,
@@ -796,7 +797,7 @@ mod_estructuras_server <- function(id, datos) {
       propio <- !is.null(r$archivo_est)
       codigo_estructuras(r,
                          nombre_est = if (propio) r$archivo_est else
-                           "estructuras_simuladas_santarosa.csv",
+                           basename(archivo_ejemplo("estructuras")),
                          crs_coords = if (propio) input$crs_coords else 4326)
     })
   })
