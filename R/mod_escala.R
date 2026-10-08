@@ -36,9 +36,9 @@ mod_escala_ui <- function(id) {
           ),
           p(
             "La ", strong("función K de Ripley en red"), " (Okabe & Yamada 2001) ",
-            "cuenta, para cada distancia ", em("r"), ", cuántos atropellos hay en ",
+            "cuenta, para cada radio ", em("r"), ", cuántos atropellos hay en ",
             "promedio a menos de ", em("r"), " metros ", strong("medidos a lo largo de la vía"),
-            " de cada atropello:"
+            " de cada atropello (en una ruta, hacia un lado y hacia el otro):"
           ),
           helpText(
             "$$\\hat{K}(r) = \\frac{L_T}{n(n-1)} \\sum_{i=1}^{n} \\sum_{j \\neq i} \\mathbf{1}\\left(d_{ij} \\le r\\right)$$"
@@ -131,29 +131,49 @@ mod_escala_ui <- function(id) {
             fill = FALSE,
             card_header(bs_icon("sliders", class = "me-1"), "Parámetros"),
             card_body(
+              div(
+                class = "small text-muted bg-light border rounded p-2 mb-3",
+                p(class = "mb-1",
+                  strong("¿Qué se calcula?"), " Alrededor de cada atropello se mide ",
+                  "un radio ", em("r"), " por la vía, hacia un lado y hacia el otro."),
+                tags$ul(
+                  class = "mb-1 ps-3",
+                  tags$li(strong("K(r):"), " cuántos atropellos hay, en promedio, ",
+                          strong("dentro"), " de ese radio (de 0 a ", em("r"),
+                          "). Es acumulativa."),
+                  tags$li(strong("g(r):"), " cuántos hay solo en un ", strong("anillo"),
+                          " alrededor de ", em("r"), ". Indica ", strong("a qué distancia"),
+                          " se agrupan los atropellos.")
+                ),
+                p(class = "mb-0",
+                  "Ambas se comparan con atropellos colocados al azar sobre la misma ",
+                  "vía. La explicación completa está en ", em("¿Qué es?"), ".")
+              ),
               uiOutput(ns("selector_grupo")),
               p(class = "small text-muted mt-n2 mb-3",
                 "Puedes analizar todos los registros o un solo grupo: grupos ",
                 "distintos pueden agregarse a escalas distintas."),
-              numericInput(ns("dist_max"), "Distancia máxima (m)",
-                           value = 3000, min = 200, max = 20000, step = 100),
-              p(class = "small text-muted mt-n2 mb-3",
-                "La mayor distancia entre atropellos (", em("r"), ", medida por la ",
-                "vía) que se evalúa: es el final del eje horizontal del gráfico. ",
-                "Una regla práctica: no más de un tercio de la longitud de la red."),
-              numericInput(ns("paso"), "Intervalo entre distancias (m)",
-                           value = 50, min = 10, max = 500, step = 10),
-              p(class = "small text-muted mt-n2 mb-3",
-                "Cada cuántos metros de distancia se calcula un punto de la curva: ",
-                "con 50 m, se calcula en ", em("r"), " = 0, 50, 100… hasta la ",
-                "distancia máxima. Más pequeño = curva más detallada pero más lenta."),
-              numericInput(ns("ancho_g"), "Ancho del anillo para g (m)",
+              numericInput(ns("ancho_g"), "Ancho del anillo (m)",
                            value = 200, min = 20, max = 2000, step = 10),
               p(class = "small text-muted mt-n2 mb-3",
-                "Para cada distancia ", em("r"), ", g cuenta los pares de atropellos ",
-                "separados por esa distancia ± la mitad de este ancho (con 200 m: ",
-                "entre ", em("r"), " − 100 y ", em("r"), " + 100 m). Muy angosto = ",
-                "curva ruidosa; muy ancho = se parece a K."),
+                "Cada punto de la curva g cuenta los atropellos que están a una ",
+                "distancia ", em("r"), " ± la mitad de este ancho (con 200 m: entre ",
+                em("r"), " − 100 y ", em("r"), " + 100 m). Como la vía es una línea, ",
+                "el \"anillo\" son dos tramos de vía, uno hacia cada lado del ",
+                "atropello. Muy angosto = curva ruidosa; muy ancho = se parece a K."),
+              numericInput(ns("dist_max"), "Radio máximo (m)",
+                           value = 3000, min = 200, max = 20000, step = 100),
+              p(class = "small text-muted mt-n2 mb-3",
+                em("r"), " es el radio alrededor de cada atropello, medido por la ",
+                "vía hacia un lado y hacia el otro. Este es el mayor radio que se ",
+                "evalúa: el final del eje horizontal del gráfico. Regla práctica: ",
+                "no más de un tercio de la longitud de la red."),
+              numericInput(ns("paso"), "Intervalo entre radios (m)",
+                           value = 50, min = 10, max = 500, step = 10),
+              p(class = "small text-muted mt-n2 mb-3",
+                "Cada cuántos metros se calcula un punto de la curva: con 50 m, ",
+                em("r"), " = 0, 50, 100… hasta el radio máximo. Más pequeño = ",
+                "curva más detallada pero más lenta."),
               numericInput(ns("nsim"), "Simulaciones de Monte Carlo",
                            value = 99, min = 19, max = 999, step = 10),
               p(class = "small text-muted mt-n2 mb-3",
@@ -322,7 +342,7 @@ mod_escala_server <- function(id, datos) {
         return()
       }
       if (input$dist_max <= input$paso) {
-        showNotification("La distancia máxima debe ser mayor que el intervalo entre distancias.",
+        showNotification("El radio máximo debe ser mayor que el intervalo entre radios.",
                          type = "error")
         return()
       }
@@ -639,7 +659,7 @@ grafico_funcion <- function(v, tipo = c("g", "k")) {
     geom_line(aes(y = obs), color = colores$primario, linewidth = 1) +
     geom_point(data = df[df$agregado, ], aes(y = obs),
                color = colores$acento, size = 1.8) +
-    labs(x = "Distancia por la red, r (m)", y = etiqueta,
+    labs(x = "Radio r, medido por la vía (m)", y = etiqueta,
          caption = "Banda gris: envolvente de Monte Carlo (95 %). Puntos naranja: agregación.") +
     theme_light(base_size = 13)
 }
