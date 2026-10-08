@@ -107,6 +107,34 @@
         "Built": "R 4.6.0; ; 2026-04-25 12:39:06 UTC; unix"
       }
     },
+    "GET": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "GET",
+        "Version": "1.0-9",
+        "Date": "2026-07-18",
+        "Title": "Global Envelopes",
+        "Encoding": "UTF-8",
+        "Authors@R": "c(\n    person(given = 'Mari', family = 'Myllymäki', role = c('aut', 'cre'),\n    email = 'mari.myllymaki@luke.fi',\n    comment = c(ORCID = \"0000-0002-2713-7088\")),\n    person(given = 'Tomáš', family = 'Mrkvička', role = 'aut',\n    email = 'mrkvicka.toma@gmail.com'),\n    person(given = 'Mikko', family = 'Kuronen', role = 'ctb',\n    email = 'mikko.kuronen@luke.fi'),\n    person(given = 'Jiří', family = 'Dvořák', role = 'ctb',\n    email = 'dvorak@karlin.mff.cuni.cz'),\n    person(given = 'Pavel', family = 'Grabarnik', role = 'ctb',\n    email = 'gpya@rambler.ru'),\n    person(given = 'Ute', family = 'Hahn', role = 'ctb',\n    email = 'ute@math.au.dk'),\n    person(given = 'Michael', family = 'Rost', role = 'ctb',\n    email = 'rost@ef.jcu.cz'),\n    person(given = 'Henri', family = 'Seijo', role = 'ctb',\n    email = 'henri.seijo@iki.fi')\n    )",
+        "Maintainer": "Mari Myllymäki <mari.myllymaki@luke.fi>",
+        "Imports": "cluster, ggplot2, grDevices, grid, gridExtra, parallel, rlang,\nstats, utils, viridisLite",
+        "Suggests": "crayon, datasets, geoR, gstat, fda, fda.usc, locfit, mvtnorm,\npatchwork, quantreg, R.rsp, sf, sp, spatstat.explore,\nspatstat.geom, spatstat.Knet, spatstat.linnet, spatstat.model,\nspatstat.random, testthat",
+        "Description": "Implementation of global envelopes for a set of general d-dimensional vectors T\n    in various applications. A 100(1-alpha)% global envelope is a band bounded by two\n    vectors such that the probability that T falls outside this envelope in any of the d\n    points is equal to alpha. Global means that the probability is controlled simultaneously\n    for all the d elements of the vectors. The global envelopes can be used for graphical\n    Monte Carlo and permutation tests where the test statistic is a multivariate vector or\n    function (e.g. goodness-of-fit testing for point patterns and random sets, functional\n    analysis of variance, functional general linear model, n-sample test of correspondence\n    of distribution functions), for central regions of functional or multivariate data (e.g.\n    outlier detection, functional boxplot) and for global confidence and prediction bands\n    (e.g. confidence band in polynomial regression, Bayesian posterior prediction). See\n    Myllymäki and Mrkvička (2024) <doi:10.18637/jss.v111.i03>,\n    Myllymäki et al. (2017) <doi:10.1111/rssb.12172>,\n    Mrkvička and Myllymäki (2023) <doi:10.1007/s11222-023-10275-7>,\n    Mrkvička et al. (2016) <doi:10.1016/j.spasta.2016.04.005>,\n    Mrkvička et al. (2017) <doi:10.1007/s11222-016-9683-9>,\n    Mrkvička et al. (2020) <doi:10.14736/kyb-2020-3-0432>,\n    Mrkvička et al. (2021) <doi:10.1007/s11009-019-09756-y>,\n    Myllymäki et al. (2021) <doi:10.1016/j.spasta.2020.100436>,\n    Mrkvička et al. (2022) <doi:10.1002/sim.9236>,\n    Dai et al. (2022) <doi:10.5772/intechopen.100124>,\n    Dvořák and Mrkvička (2022) <doi:10.1007/s00180-021-01134-y>,\n    Mrkvička et al. (2023) <doi:10.48550/arXiv.2309.04746>, and\n    Konstantinou et al. (2024) <doi: 10.1007/s00180-024-01569-z>.",
+        "License": "GPL-3",
+        "RoxygenNote": "7.3.3",
+        "URL": "https://github.com/myllym/GET",
+        "BugReports": "https://github.com/myllym/GET/issues",
+        "VignetteBuilder": "R.rsp",
+        "NeedsCompilation": "no",
+        "Packaged": "2026-07-19 07:59:16 UTC; marmylly",
+        "Author": "Mari Myllymäki [aut, cre] (ORCID:\n    <https://orcid.org/0000-0002-2713-7088>),\n  Tomáš Mrkvička [aut],\n  Mikko Kuronen [ctb],\n  Jiří Dvořák [ctb],\n  Pavel Grabarnik [ctb],\n  Ute Hahn [ctb],\n  Michael Rost [ctb],\n  Henri Seijo [ctb]",
+        "Depends": "R (>= 2.10)",
+        "Repository": "CRAN",
+        "Date/Publication": "2026-07-19 13:50:02 UTC",
+        "Built": "R 4.6.1; ; 2026-07-19 14:23:08 UTC; unix"
+      }
+    },
     "KernSmooth": {
       "Source": "CRAN",
       "Repository": "https://cran.rstudio.com",
@@ -131,6 +159,36 @@
         "Date/Publication": "2026-08-12 06:40:09 UTC",
         "Built": "R 4.6.1; aarch64-apple-darwin23; 2026-08-12 07:00:40 UTC; unix",
         "Archs": "KernSmooth.so.dSYM"
+      }
+    },
+    "MASS": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "MASS",
+        "Priority": "recommended",
+        "Version": "7.3-66",
+        "Date": "2026-07-15",
+        "Revision": "$Rev: 3693 $",
+        "Depends": "R (>= 4.4.0), grDevices, graphics, stats, utils",
+        "Imports": "methods",
+        "Suggests": "lattice, nlme, nnet, survival",
+        "Authors@R": "c(person(\"Brian\", \"Ripley\", role = c(\"aut\", \"cre\", \"cph\"),\n                    email = \"Brian.Ripley@R-project.org\"),\n\t     person(\"Bill\", \"Venables\", role = c(\"aut\", \"cph\")),\n\t     person(c(\"Douglas\", \"M.\"), \"Bates\", role = \"ctb\"),\n\t     person(\"Kurt\", \"Hornik\", role = \"trl\",\n                     comment = \"partial port ca 1998\"),\n\t     person(\"Albrecht\", \"Gebhardt\", role = \"trl\",\n                     comment = \"partial port ca 1998\"),\n\t     person(\"David\", \"Firth\", role = \"ctb\",\n\t            comment = \"support functions for polr\"))",
+        "Description": "Functions and datasets to support Venables and Ripley,\n  \"Modern Applied Statistics with S\" (4th edition, 2002).",
+        "Title": "Support Functions and Datasets for Venables and Ripley's MASS",
+        "LazyData": "yes",
+        "ByteCompile": "yes",
+        "License": "GPL-2 | GPL-3",
+        "URL": "http://www.stats.ox.ac.uk/pub/MASS4/",
+        "Contact": "<MASS@stats.ox.ac.uk>",
+        "NeedsCompilation": "yes",
+        "Packaged": "2026-07-15 10:10:22 UTC; ripley",
+        "Author": "Brian Ripley [aut, cre, cph],\n  Bill Venables [aut, cph],\n  Douglas M. Bates [ctb],\n  Kurt Hornik [trl] (partial port ca 1998),\n  Albrecht Gebhardt [trl] (partial port ca 1998),\n  David Firth [ctb] (support functions for polr)",
+        "Maintainer": "Brian Ripley <Brian.Ripley@R-project.org>",
+        "Repository": "CRAN",
+        "Date/Publication": "2026-07-15 10:58:26 UTC",
+        "Built": "R 4.6.1; aarch64-apple-darwin23; 2026-07-15 13:26:04 UTC; unix",
+        "Archs": "MASS.so.dSYM"
       }
     },
     "Matrix": {
@@ -871,6 +929,47 @@
         "Repository": "CRAN",
         "Date/Publication": "2026-05-25 05:50:02 UTC",
         "Built": "R 4.6.0; ; 2026-05-25 08:30:02 UTC; unix"
+      }
+    },
+    "cluster": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "cluster",
+        "Version": "2.1.8.3",
+        "VersionNote": "Last CRAN: 2.1.8.2 on 2026-02-03; 2.1.8.1 on 2025-03-11;\n2.1.8 on 2024-12-10; 2.1.7 on 2024-12-06;",
+        "Date": "2026-07-28",
+        "Priority": "recommended",
+        "Title": "\"Finding Groups in Data\": Cluster Analysis Extended Rousseeuw et\nal.",
+        "Description": "Methods for Cluster analysis.  Much extended the original from\n\tPeter Rousseeuw, Anja Struyf and Mia Hubert,\n\tbased on Kaufman and Rousseeuw (1990) \"Finding Groups in Data\".",
+        "Maintainer": "Martin Maechler <maechler@stat.math.ethz.ch>",
+        "Authors@R": "c(person(\"Martin\",\"Maechler\", role = c(\"aut\",\"cre\"),\n\t   email=\"maechler@stat.math.ethz.ch\", comment = c(ORCID = \"0000-0002-8685-9910\"))\n ,person(\"Peter\", \"Rousseeuw\", role=\"aut\", email=\"peter.rousseeuw@kuleuven.be\",\n         comment = c(\"Fortran original\", ORCID = \"0000-0002-3807-5353\"))\n ,person(\"Anja\", \"Struyf\", role=\"aut\", comment= \"S original\")\n ,person(\"Mia\", \"Hubert\", role=\"aut\", email= \"Mia.Hubert@uia.ua.ac.be\",\n         comment = c(\"S original\", ORCID = \"0000-0001-6398-4850\"))\n ,person(\"Kurt\", \"Hornik\", role=c(\"trl\", \"ctb\"),\n         email=\"Kurt.Hornik@R-project.org\",\n         comment=c(\"port to R; maintenance(1999-2000)\", ORCID=\"0000-0003-4198-9911\"))\n ,person(\"Matthias\", \"Studer\", role=\"ctb\")\n ,person(\"Pierre\", \"Roudier\", role=\"ctb\")\n ,person(\"Juan\",   \"Gonzalez\", role=\"ctb\")\n ,person(\"Kamil\",  \"Kozlowski\", role=\"ctb\")\n ,person(\"Erich\",  \"Schubert\", role=\"ctb\", comment = c(\"fastpam options for pam()\",\n                                                       ORCID = \"0000-0001-9143-4880\"))\n ,person(\"Keefe\",  \"Murphy\", role=\"ctb\", comment = \"volume.ellipsoid({d >= 3})\")\n #not yet ,person(\"Fischer-Rasmussen\", \"Kasper\", role = \"ctb\", comment = \"Gower distance for CLARA\")\n )",
+        "Depends": "R (>= 3.5.0)",
+        "Imports": "graphics, grDevices, stats, utils",
+        "Suggests": "MASS, Matrix",
+        "SuggestsNote": "MASS: two examples using cov.rob() and mvrnorm(); Matrix\ntools for testing",
+        "Enhances": "mvoutlier, fpc, ellipse, sfsmisc",
+        "EnhancesNote": "xref-ed in man/*.Rd",
+        "LazyLoad": "yes",
+        "LazyData": "yes",
+        "ByteCompile": "yes",
+        "BuildResaveData": "no",
+        "License": "GPL (>= 2)",
+        "URL": "https://svn.r-project.org/R-packages/trunk/cluster/",
+        "NeedsCompilation": "yes",
+        "Packaged": "2026-07-28 13:14:45 UTC; maechler",
+        "Author": "Martin Maechler [aut, cre] (ORCID:\n    <https://orcid.org/0000-0002-8685-9910>),\n  Peter Rousseeuw [aut] (Fortran original, ORCID:\n    <https://orcid.org/0000-0002-3807-5353>),\n  Anja Struyf [aut] (S original),\n  Mia Hubert [aut] (S original, ORCID:\n    <https://orcid.org/0000-0001-6398-4850>),\n  Kurt Hornik [trl, ctb] (port to R; maintenance(1999-2000), ORCID:\n    <https://orcid.org/0000-0003-4198-9911>),\n  Matthias Studer [ctb],\n  Pierre Roudier [ctb],\n  Juan Gonzalez [ctb],\n  Kamil Kozlowski [ctb],\n  Erich Schubert [ctb] (fastpam options for pam(), ORCID:\n    <https://orcid.org/0000-0001-9143-4880>),\n  Keefe Murphy [ctb] (volume.ellipsoid({d >= 3}))",
+        "Repository": "CRAN",
+        "Date/Publication": "2026-07-30 15:30:09 UTC",
+        "Built": "R 4.6.1; aarch64-apple-darwin23; 2026-07-30 18:10:02 UTC; unix",
+        "Archs": "cluster.so.dSYM",
+        "RemoteType": "standard",
+        "RemoteRef": "cluster",
+        "RemotePkgRef": "cluster",
+        "RemoteRepos": "https://cran.rstudio.com",
+        "RemoteReposName": "CRAN",
+        "RemotePkgPlatform": "aarch64-apple-darwin23",
+        "RemoteSha": "2.1.8.3"
       }
     },
     "codetools": {
@@ -1731,6 +1830,30 @@
         "Repository": "CRAN",
         "Date/Publication": "2026-07-07 19:30:02 UTC",
         "Built": "R 4.6.1; ; 2026-07-08 00:04:54 UTC; unix"
+      }
+    },
+    "gridExtra": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "gridExtra",
+        "Authors@R": "c(person(\"Baptiste\", \"Auguie\",\n    email = \"baptiste.auguie@vuw.ac.nz\",\n    role = c(\"aut\", \"cre\")), person(\"Anton\", \"Antonov\",\n    email = \"tonytonov@gmail.com\",\n    role = c(\"ctb\")))",
+        "License": "GPL (>= 2)",
+        "Title": "Miscellaneous Functions for \"Grid\" Graphics",
+        "Type": "Package",
+        "Description": "Provides a number of user-level functions to work with \"grid\"\n    graphics, notably to arrange multiple grid-based plots on a page, and draw\n    tables.",
+        "Version": "2.3.1",
+        "VignetteBuilder": "knitr",
+        "Imports": "gtable, grid, grDevices, graphics, utils",
+        "Suggests": "ggplot2, egg, lattice, knitr, testthat",
+        "RoxygenNote": "6.0.1",
+        "NeedsCompilation": "no",
+        "Packaged": "2026-06-25 06:16:42 UTC; hornik",
+        "Author": "Baptiste Auguie [aut, cre],\n  Anton Antonov [ctb]",
+        "Maintainer": "Baptiste Auguie <baptiste.auguie@vuw.ac.nz>",
+        "Repository": "CRAN",
+        "Date/Publication": "2026-06-25 08:54:51 UTC",
+        "Built": "R 4.6.1; ; 2026-06-25 09:06:55 UTC; unix"
       }
     },
     "gtable": {
@@ -3634,12 +3757,7 @@
         "Repository": "CRAN",
         "Date/Publication": "2026-02-13 13:50:02 UTC",
         "Built": "R 4.6.0; aarch64-apple-darwin23; 2026-04-26 05:23:53 UTC; unix",
-        "Archs": "spdep.so.dSYM",
-        "RemoteType": "standard",
-        "RemotePkgRef": "spdep",
-        "RemoteRef": "spdep",
-        "RemoteRepos": "https://cran.rstudio.com",
-        "RemoteSha": "1.4-2"
+        "Archs": "spdep.so.dSYM"
       }
     },
     "terra": {
@@ -4159,14 +4277,20 @@
     "app.R": {
       "checksum": "5e2a90e274ac8aaabda7c9c15c0f27e4"
     },
+    "data-raw/anfibios_alcantarillas.R": {
+      "checksum": "4f70495da2ac2800e84db82565e2b5c1"
+    },
     "data-raw/atropellos_simulados_santarosa.R": {
       "checksum": "8bad5d3994ab3588c8f925275d120c46"
+    },
+    "data-raw/estructuras_simuladas.R": {
+      "checksum": "8ce43122984ad3790b9276e59310151a"
     },
     "data-raw/red_ruta1_santarosa.R": {
       "checksum": "97fb6613111d5c999b837302f9b5ea1c"
     },
     "DESCRIPTION": {
-      "checksum": "eac6cdfbc710ff85c3dfafa9ffa16b01"
+      "checksum": "496d8fff4f27a66ea88abc88ede1fd58"
     },
     "dev/01_start.R": {
       "checksum": "ba4dd9a009ca90235b35ba1e94a1a824"
@@ -4190,7 +4314,10 @@
       "checksum": "d0fa887d45877e107ceda3737f355417"
     },
     "inst/extdata/atropellos_simulados_santarosa.csv": {
-      "checksum": "b364e6c838a3ef89664bdbc1c781cb8c"
+      "checksum": "554f801c7eb51852198db7e61c026887"
+    },
+    "inst/extdata/estructuras_simuladas_santarosa.csv": {
+      "checksum": "2135d0fd881332527cbcbf20b4b65639"
     },
     "inst/extdata/hotspots_verdaderos_santarosa.csv": {
       "checksum": "ba0925ee75d34ff602d45e57637ad732"
@@ -4214,10 +4341,13 @@
       "checksum": "eb92c343317398f6a3deebd8def2b87f"
     },
     "R/app_server.R": {
-      "checksum": "e0fbfd68abacf4508fe79c42463b8105"
+      "checksum": "0a6dbdb000d7f57dfa091f58a504d497"
     },
     "R/app_ui.R": {
-      "checksum": "d91658296feb82bf4c72d4107d7280e1"
+      "checksum": "35d58bc18d712e4b6500ff700a0d03b3"
+    },
+    "R/fct_estructuras.R": {
+      "checksum": "f25c72f25c6c9256fed133cf9ed277ce"
     },
     "R/helpers.R": {
       "checksum": "9db2908326216ff1897079235fc20f4d"
@@ -4229,10 +4359,16 @@
       "checksum": "ec42f5604c1b958076a8770219a371be"
     },
     "R/mod_datos_red.R": {
-      "checksum": "4e06d6f7b1e5f831cc53f840d8d65c38"
+      "checksum": "b4661b68388232a009c77e9d854bc3bd"
     },
     "R/mod_escala.R": {
       "checksum": "9cc88e6c02c7603b5bfa8437f03e619e"
+    },
+    "R/mod_estructuras.R": {
+      "checksum": "1f1a719036e02f50552a271fd5ca0147"
+    },
+    "R/mod_gistar.R": {
+      "checksum": "a7c0c8bb85aae7bf7fcfc7f053262eb2"
     },
     "R/mod_nkde.R": {
       "checksum": "f8744675468311058d89254536e536f3"
@@ -4243,11 +4379,14 @@
     "R/utils_espacial.R": {
       "checksum": "ddd68953f1ea4d77d0247191830c8087"
     },
+    "R/utils_exportar.R": {
+      "checksum": "4f7759584cd2905fad99011f8ea37701"
+    },
     "R/utils_ruta.R": {
-      "checksum": "55d9d6cce77e4a0db0822e374fb0943e"
+      "checksum": "17e34777e8d0cadf06d60ed4ea1b6fe7"
     },
     "renv.lock": {
-      "checksum": "273afe66bdc0a6456bdc5b3162c2b535"
+      "checksum": "463b9b19f9d00d206471623dc0d94043"
     }
   },
   "users": null
