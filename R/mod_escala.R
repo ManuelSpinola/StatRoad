@@ -141,7 +141,7 @@ mod_escala_ui <- function(id) {
                 "La mayor distancia entre atropellos (", em("r"), ", medida por la ",
                 "vía) que se evalúa: es el final del eje horizontal del gráfico. ",
                 "Una regla práctica: no más de un tercio de la longitud de la red."),
-              numericInput(ns("paso"), "Paso (m)",
+              numericInput(ns("paso"), "Intervalo entre distancias (m)",
                            value = 50, min = 10, max = 500, step = 10),
               p(class = "small text-muted mt-n2 mb-3",
                 "Cada cuántos metros de distancia se calcula un punto de la curva: ",
@@ -322,7 +322,7 @@ mod_escala_server <- function(id, datos) {
         return()
       }
       if (input$dist_max <= input$paso) {
-        showNotification("La distancia máxima debe ser mayor que el paso.",
+        showNotification("La distancia máxima debe ser mayor que el intervalo entre distancias.",
                          type = "error")
         return()
       }
