@@ -374,7 +374,7 @@ mod_escala_server <- function(id, datos) {
           bs_icon("exclamation-circle", class = "me-1"),
           "Aún no se ha calculado K.", tags$br(), tags$br(),
           "Revisa los parámetros y presiona ", strong("\"Calcular K y g\""),
-          ". En una ruta continua tarda un par de segundos."
+          ". El tiempo depende del número de registros y de simulaciones."
         ))
       }
       tagList(
