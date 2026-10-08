@@ -143,6 +143,26 @@ mod_estructuras_ui <- function(id) {
               "los segmentos vecinos se parecen entre sí y el p de Wald resulta ",
               "optimista, así que se calcula con el mismo desplazamiento circular."))
           ),
+          card(
+            fill = FALSE, class = "mt-2",
+            card_header(bs_icon("fire", class = "me-1"),
+                        "6. ¿Y los puntos críticos?"),
+            card_body(
+              p(class = "small",
+                "Con los puntos críticos que encontró el ", strong("KDE"), ", la ",
+                "pestaña \"Hotspots\" muestra qué estructuras tiene cada uno y a qué ",
+                "distancia queda la más cercana. Es información útil para gestión: ",
+                "dónde hay una estructura que se podría adecuar para la fauna."),
+              p(class = "small mb-0",
+                bs_icon("exclamation-triangle", class = "me-1"),
+                strong("Precaución: "),
+                "la prueba \"¿hay más estructuras dentro de los puntos críticos de lo ",
+                "esperado?\" tiene poca potencia. Si las estructuras son frecuentes ",
+                "(una por km, por ejemplo), muchos puntos críticos tienen una cerca ",
+                "por pura casualidad; y con pocos puntos críticos hay muy poca ",
+                "información. Para probar la asociación, las pruebas con los ",
+                "atropellos individuales son mucho más potentes."))
+          ),
           div(
             class = "alert alert-info small mt-3 mb-0",
             bs_icon("info-circle", class = "me-1"),
@@ -379,6 +399,22 @@ mod_estructuras_ui <- function(id) {
             uiOutput(ns("nota_moran"))
           ),
           nav_panel(
+            title = "Hotspots",
+            div(class = "alert alert-secondary small mt-3 mb-3",
+                bs_icon("lightbulb", class = "me-1"),
+                strong("Cómo leer esta pestaña: "),
+                "las franjas son los puntos críticos que encontró el KDE y las ",
+                "marcas inferiores, las estructuras. La tabla dice qué estructuras ",
+                "tiene cada punto crítico y a qué distancia queda la más cercana. ",
+                "Abajo, la prueba compara cuántas estructuras caen dentro de los ",
+                "puntos críticos con lo que daría el azar."),
+            uiOutput(ns("estado_hotspots")),
+            plotOutput(ns("plot_hotspots"), height = "260px"),
+            br(),
+            DTOutput(ns("tabla_hotspots")),
+            uiOutput(ns("prueba_hotspots"))
+          ),
+          nav_panel(
             title = "Estructuras",
             div(class = "alert alert-secondary small mt-3 mb-3",
                 bs_icon("lightbulb", class = "me-1"),
@@ -408,7 +444,8 @@ mod_estructuras_ui <- function(id) {
 
 # ── Server ───────────────────────────────────────────────
 # datos: reactive devuelto por mod_datos_red_server()
-mod_estructuras_server <- function(id, datos) {
+# nkde:  reactive devuelto por mod_nkde_server() (puntos críticos del KDE)
+mod_estructuras_server <- function(id, datos, nkde = NULL) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -764,15 +801,118 @@ mod_estructuras_server <- function(id, datos) {
     })
 
     # ────────────────────────────────────────────────────
+    # HOTSPOTS (puntos críticos del KDE) RESPECTO A ESTRUCTURAS
+    # ────────────────────────────────────────────────────
+    kde_actual <- reactive({
+      if (is.null(nkde)) return(NULL)
+      k <- nkde()
+      if (is.null(k)) NULL else k
+    })
+
+    hotspots <- reactive({
+      r <- resultado()
+      k <- kde_actual()
+      if (is.null(r) || is.null(k) || is.null(k$tabla) || nrow(k$tabla) == 0) return(NULL)
+      set.seed(r$semilla)
+      e <- r$est$ajustados
+      h <- hotspots_estructuras(k$tabla, e$km, e$id, e$tipo, r$L, nsim = 999)
+      h$grupo_kde <- k$grupo
+      h$h_kde     <- k$param$h
+      h
+    })
+
+    output$estado_hotspots <- renderUI({
+      req(resultado())
+      k <- kde_actual()
+      if (is.null(k)) {
+        return(div(class = "alert alert-warning small py-2 px-3",
+                   bs_icon("exclamation-triangle", class = "me-1"),
+                   "Primero calcula los puntos críticos en ",
+                   strong("\"Puntos críticos (KDE)\""), "."))
+      }
+      if (is.null(k$tabla) || nrow(k$tabla) == 0) {
+        return(div(class = "alert alert-secondary small py-2 px-3",
+                   bs_icon("dash-circle", class = "me-1"),
+                   "El KDE no encontró puntos críticos: no hay nada que comparar."))
+      }
+      h <- hotspots()
+      div(class = "alert alert-info small py-2 px-3 mb-3",
+          bs_icon("info-circle", class = "me-1"),
+          h$n_hotspots, " puntos críticos del KDE (registros: ", h$grupo_kde,
+          "; ancho de banda ", h$h_kde, " m) y ", resultado()$n_est,
+          " estructuras de los tipos elegidos.")
+    })
+
+    output$plot_hotspots <- renderPlot({
+      h <- hotspots(); req(h)
+      r <- resultado()
+      t <- h$tabla
+      ggplot() +
+        geom_rect(data = t, aes(xmin = km_inicio, xmax = km_fin, ymin = 0, ymax = 1),
+                  fill = colores$peligro, alpha = 0.35) +
+        geom_text(data = t, aes(x = (km_inicio + km_fin) / 2, y = 1.12, label = hotspot),
+                  color = colores$peligro, fontface = "bold", size = 4) +
+        geom_segment(data = sf::st_drop_geometry(r$est$ajustados),
+                     aes(x = km, xend = km, y = 0, yend = 0.35),
+                     color = colores$texto, linewidth = 0.8) +
+        scale_x_continuous("Posición a lo largo de la vía (km)", limits = c(0, r$L)) +
+        scale_y_continuous(NULL, breaks = NULL, limits = c(0, 1.2)) +
+        labs(caption = "Franjas: puntos críticos (KDE). Marcas: estructuras.") +
+        theme_light(base_size = 13)
+    })
+
+    output$tabla_hotspots <- renderDT({
+      h <- hotspots(); req(h)
+      t <- h$tabla
+      cols <- c("hotspot", "km_inicio", "km_fin",
+                intersect("grupo_dominante", names(t)),
+                "n_estructuras", "estructuras", "mas_cercana", "distancia_m")
+      nombres <- c(hotspot = "Punto crítico", km_inicio = "km inicio", km_fin = "km fin",
+                   grupo_dominante = "Grupo dominante", n_estructuras = "Estructuras dentro",
+                   estructuras = "Cuáles", mas_cercana = "Más cercana",
+                   distancia_m = "Distancia (m)")
+      datatable(t[, cols], rownames = FALSE, colnames = unname(nombres[cols]),
+                options = list(dom = "t", scrollX = TRUE, pageLength = 50))
+    })
+
+    output$prueba_hotspots <- renderUI({
+      h <- hotspots(); req(h)
+      sig <- h$p <= 0.05
+      tagList(
+        div(class = paste0("alert alert-", if (sig) "info" else "secondary",
+                           " small py-2 px-3 mt-3 mb-2"),
+            bs_icon(if (sig) "check-circle-fill" else "dash-circle", class = "me-1"),
+            strong("Prueba: "), h$obs, " estructuras dentro de los puntos críticos; ",
+            "por azar se esperarían ", round(h$esperado, 1), " (p = ",
+            formatear_p(h$p), "). ", h$obs_con, " de ", h$n_hotspots,
+            " puntos críticos tienen al menos una estructura (por azar: ",
+            round(h$esp_con, 1), ").",
+            if (sig) " Hay más estructuras en los puntos críticos de lo esperado." else
+              " No hay evidencia de que haya más estructuras en los puntos críticos de lo esperado."),
+        div(class = "alert alert-warning small py-2 px-3 mb-0",
+            bs_icon("exclamation-triangle", class = "me-1"),
+            "Con una estructura cada ", round(h$km_por_est, 1), " km y puntos críticos ",
+            "que cubren el ", round(100 * h$fraccion), " % de la ruta, por azar ya se ",
+            "esperan ", round(h$esperado, 1), " estructuras dentro. ",
+            if (!sig) "Un resultado no significativo no descarta la asociación: con ",
+            if (!sig) paste0(h$n_hotspots, " puntos críticos la prueba tiene poca potencia. "),
+            "Para probar la asociación, usa las pruebas con atropellos individuales ",
+            "(pestañas Distancia, Escala y Modelo).")
+      )
+    })
+
+    # ────────────────────────────────────────────────────
     # DESCARGAS
     # ────────────────────────────────────────────────────
+    hotspots_o_null <- function() tryCatch(hotspots(), error = function(e) NULL)
+
     output$descargar_gpkg <- downloadHandler(
       filename = function() "estructuras_atropellos_StatRoad.gpkg",
       content  = function(file) {
         r <- resultado()
         validate(need(r, "Primero corre el análisis."))
-        escribir_gpkg(capas_estructuras(r, datos()$red_prep$linea), file,
-                      parametros_estructuras(r))
+        escribir_gpkg(capas_estructuras(r, datos()$red_prep$linea, hotspots_o_null()),
+                      file, parametros_estructuras(r))
       }
     )
 
@@ -781,8 +921,8 @@ mod_estructuras_server <- function(id, datos) {
       content  = function(file) {
         r <- resultado()
         validate(need(r, "Primero corre el análisis."))
-        utils::write.csv(resumen_pruebas(r), file, row.names = FALSE,
-                         fileEncoding = "UTF-8")
+        utils::write.csv(resumen_pruebas(r, hotspots_o_null()), file,
+                         row.names = FALSE, fileEncoding = "UTF-8")
       }
     )
 
@@ -946,7 +1086,7 @@ figura_idea_nulo <- function() {
 }
 
 # ── Exportación ──────────────────────────────────────────
-capas_estructuras <- function(r, linea) {
+capas_estructuras <- function(r, linea, hot = NULL) {
   limpiar <- function(x) {
     nm <- names(x)
     nm[nm == "x"] <- "x_original"; nm[nm == "y"] <- "y_original"
@@ -964,9 +1104,10 @@ capas_estructuras <- function(r, linea) {
     segmentos_modelo      = segmentos_sf(linea, r$modelo$segmentos),
     curva_k               = r$k$tabla,
     distribucion_nula     = data.frame(mediana_sim_km = r$distancia$sim),
-    resumen_pruebas       = resumen_pruebas(r)
+    resumen_pruebas       = resumen_pruebas(r, hot)
   )
   if (nrow(exc) > 0) capas$estructuras_excluidas <- limpiar(exc)
+  if (!is.null(hot)) capas$hotspots_estructuras <- hot$tabla
   capas
 }
 
@@ -979,9 +1120,9 @@ parametros_estructuras <- function(r) {
        longitud_ruta_km = round(r$L, 3))
 }
 
-resumen_pruebas <- function(r) {
+resumen_pruebas <- function(r, hot = NULL) {
   c <- r$modelo$coef
-  data.frame(
+  res <- data.frame(
     prueba = c("Distancia a la estructura más cercana",
                "K cruzada (envolvente global)",
                "Modelo por segmentos (razón de tasas por km)"),
@@ -993,6 +1134,15 @@ resumen_pruebas <- function(r) {
     p = c(r$distancia$p, r$k$p, c$p_circular),
     grupo = r$grupo, n_atropellos = r$n_ev, n_estructuras = r$n_est
   )
+  if (!is.null(hot)) {
+    res <- rbind(res, data.frame(
+      prueba = "Estructuras dentro de los puntos críticos del KDE",
+      estadistico = paste0(hot$obs, " dentro (azar: ", round(hot$esperado, 1),
+                           "); ", hot$n_hotspots, " puntos críticos"),
+      p = hot$p, grupo = paste0(r$grupo, " (KDE: ", hot$grupo_kde, ")"),
+      n_atropellos = r$n_ev, n_estructuras = r$n_est))
+  }
+  res
 }
 
 # ── Generador del código R reproducible ──────────────────

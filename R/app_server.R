@@ -16,7 +16,7 @@ app_server <- function(input, output, session) {
   gistar <- mod_gistar_server("gistar", datos = datos_ajustados, escala = escala)
 
   # Relación entre atropellos y estructuras (alcantarillas, puentes…)
-  mod_estructuras_server("estructuras", datos = datos_ajustados)
+  mod_estructuras_server("estructuras", datos = datos_ajustados, nkde = nkde)
 
   mod_acerca_de_server("acerca_de")
 

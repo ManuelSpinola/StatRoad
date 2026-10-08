@@ -210,3 +210,63 @@ moran_residuos <- function(res, nsim = 999) {
   mc <- spdep::moran.mc(res, lw, nsim = nsim)
   data.frame(I = unname(mc$statistic), p = mc$p.value)
 }
+
+# ── 4. Hotspots respecto a estructuras ────────────────────────
+# hotspots: data.frame con km_inicio y km_fin (p. ej. la tabla de
+# puntos críticos del KDE). est_km, est_id, est_tipo: estructuras
+# sobre la vía. L: largo de la ruta (km).
+# Prueba: número de estructuras dentro de algún hotspot, comparado
+# con el que resulta al desplazar las estructuras al azar a lo largo
+# de la ruta (desplazamiento circular: conserva su espaciamiento).
+# Ojo: con estructuras frecuentes, muchas caen dentro de los hotspots
+# por azar; con pocos hotspots la prueba tiene poca potencia.
+hotspots_estructuras <- function(hotspots, est_km, est_id, est_tipo, L,
+                                 nsim = 999) {
+  ini <- hotspots$km_inicio
+  fin <- hotspots$km_fin
+  n_dentro <- function(k) sum(vapply(k, function(x) any(x >= ini & x <= fin),
+                                     logical(1)))
+  con_est <- function(k) sum(vapply(seq_along(ini), function(i)
+    any(k >= ini[i] & k <= fin[i]), logical(1)))
+
+  # tabla descriptiva por hotspot
+  tabla <- do.call(rbind, lapply(seq_along(ini), function(i) {
+    dentro <- est_km >= ini[i] & est_km <= fin[i]
+    dist   <- pmax(0, ini[i] - est_km, est_km - fin[i])        # 0 si está dentro
+    j      <- which.min(dist)
+    data.frame(
+      hotspot          = if (is.null(hotspots$punto_critico)) paste0("PC", i) else
+                           hotspots$punto_critico[i],
+      km_inicio        = round(ini[i], 2),
+      km_fin           = round(fin[i], 2),
+      n_estructuras    = sum(dentro),
+      estructuras      = if (any(dentro)) paste0(est_id[dentro], " (", est_tipo[dentro], ")",
+                                                 collapse = ", ") else "—",
+      mas_cercana      = paste0(est_id[j], " (", est_tipo[j], ")"),
+      distancia_m      = round(dist[j] * 1000)
+    )
+  }))
+  if ("grupo_dominante" %in% names(hotspots)) {
+    tabla$grupo_dominante <- hotspots$grupo_dominante
+  }
+
+  obs     <- n_dentro(est_km)
+  obs_con <- con_est(est_km)
+  sim <- t(vapply(seq_len(nsim), function(s) {
+    k <- (est_km + stats::runif(1, 0, L)) %% L
+    c(n_dentro(k), con_est(k))
+  }, numeric(2)))
+
+  list(
+    tabla       = tabla,
+    obs         = obs,
+    esperado    = mean(sim[, 1]),
+    p           = (1 + sum(sim[, 1] >= obs)) / (nsim + 1),
+    obs_con     = obs_con,
+    esp_con     = mean(sim[, 2]),
+    n_hotspots  = length(ini),
+    fraccion    = sum(fin - ini) / L,
+    km_por_est  = L / length(est_km),
+    nsim        = nsim
+  )
+}
