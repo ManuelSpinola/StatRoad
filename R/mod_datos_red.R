@@ -116,11 +116,12 @@ mod_datos_red_ui <- function(id) {
                   strong("Red vial real"), " (~19 km) descargada de OpenStreetMap ",
                   "(© colaboradores de OpenStreetMap, ODbL).",
                   tags$br(), tags$br(),
-                  strong("Atropellos simulados"), " (280 registros, 2024–2025) con ",
-                  "características conocidas: 3 puntos críticos de ~1 km (dominados por ",
-                  "anfibios, mamíferos y reptiles), un pulso de anfibios al inicio de ",
-                  "las lluvias, error de GPS de 5–30 m y 6 registros a más de 100 m de ",
-                  "la vía. Las ubicaciones de los puntos críticos son arbitrarias."
+                  strong("Atropellos simulados"), " (308 registros, 2024–2025) con ",
+                  "características conocidas: 3 puntos críticos de ~1 km (H1–H3, dominados ",
+                  "por anfibios, mamíferos y reptiles), un pulso de anfibios al inicio de ",
+                  "las lluvias, anfibios concentrados junto a las alcantarillas, error de ",
+                  "GPS de 5–30 m y 6 registros a más de 100 m de la vía. Las ubicaciones ",
+                  "son arbitrarias."
                 ),
                 downloadButton(ns("descargar_red_ejemplo"),
                                "Descargar red de ejemplo (.gpkg)",
