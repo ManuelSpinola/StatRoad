@@ -1,0 +1,44 @@
+"id","tipo","nombre","fuente","diametro_m","x","y"
+"E01","Alcantarilla",,"simulada",0.9,-85.493001,10.684778
+"E02","Alcantarilla",,"simulada",1.1,-85.494889,10.689025
+"E03","Alcantarilla",,"simulada",1.5,-85.495996,10.69296
+"E04","Alcantarilla",,"simulada",1.5,-85.497427,10.697039
+"E05","Alcantarilla","Quebrada Mela","OSM",1.3,-85.499894,10.704776
+"E06","Alcantarilla",,"simulada",1.7,-85.50192,10.708221
+"E07","Alcantarilla",,"simulada",1.2,-85.508095,10.715316
+"E08","Puente","Río Irigaray","OSM",,-85.510391,10.722993
+"E09","Alcantarilla","Quebrada Peor es Nada","OSM",1.6,-85.511249,10.731429
+"E10","Alcantarilla",,"simulada",1.9,-85.511919,10.741255
+"E11","Alcantarilla",,"simulada",1,-85.512461,10.747461
+"E12","Puente","Río Los Ahogados","OSM",,-85.515536,10.753774
+"E13","Alcantarilla",,"simulada",1.6,-85.520479,10.75882
+"E14","Alcantarilla",,"simulada",1.6,-85.525709,10.76893
+"E15","Alcantarilla",,"simulada",1,-85.529889,10.777355
+"E16","Alcantarilla",,"simulada",1.1,-85.534129,10.786128
+"E17","Alcantarilla",,"simulada",1,-85.540922,10.799663
+"E18","Alcantarilla",,"simulada",2,-85.542686,10.803287
+"E19","Puente","Río Azufrado","OSM",,-85.544441,10.812385
+"E20","Puente","Río Tempisquito","OSM",,-85.54386,10.815694
+"E21","Alcantarilla",,"simulada",1.7,-85.547752,10.822613
+"E22","Alcantarilla",,"simulada",1.3,-85.553129,10.827071
+"E23","Alcantarilla",,"simulada",1.7,-85.556971,10.832362
+"E24","Alcantarilla",,"simulada",1.8,-85.568205,10.847386
+"E25","Alcantarilla",,"simulada",0.9,-85.572951,10.850899
+"E26","Alcantarilla",,"simulada",1,-85.5718,10.854736
+"E27","Alcantarilla","Quebrada Puercos","OSM",1.5,-85.570235,10.859637
+"E28","Alcantarilla",,"simulada",1.9,-85.572609,10.86858
+"E29","Alcantarilla",,"simulada",1,-85.574067,10.873339
+"E30","Alcantarilla",,"simulada",1,-85.592255,10.878016
+"E31","Alcantarilla",,"simulada",1.3,-85.601954,10.885056
+"E32","Alcantarilla",,"simulada",1,-85.602679,10.890116
+"E33","Alcantarilla",,"simulada",1.4,-85.60269,10.901156
+"E34","Alcantarilla",,"simulada",1.4,-85.602812,10.910677
+"E35","Alcantarilla",,"simulada",1,-85.602874,10.914471
+"E36","Alcantarilla",,"simulada",1.8,-85.613949,10.952613
+"E37","Alcantarilla",,"simulada",1.7,-85.620012,10.965906
+"E38","Alcantarilla",,"simulada",1.4,-85.622938,10.976245
+"E39","Alcantarilla",,"simulada",1.8,-85.627979,10.989643
+"E40","Alcantarilla",,"simulada",1.1,-85.636414,11.01341
+"E41","Alcantarilla",,"simulada",1.5,-85.638246,11.018296
+"E42","Alcantarilla",,"simulada",1.9,-85.637324,11.024492
+"E43","Alcantarilla",,"simulada",1.9,-85.626446,11.045779

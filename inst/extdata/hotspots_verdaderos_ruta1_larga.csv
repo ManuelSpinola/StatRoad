@@ -1,0 +1,7 @@
+"hotspot","descripcion","centro_km","ancho_m","n_eventos","con_estructura","x","y"
+"H1","Anfibios — Quebrada Peor es Nada (alcantarilla)",6.26,500,70,TRUE,-85.511227,10.731431
+"H2","Mamíferos — Río Tempisquito (puente)",16.55,500,60,TRUE,-85.543919,10.815702
+"H3","Anfibios — alcantarilla",31,500,70,TRUE,-85.602963,10.914471
+"H4","Mixto — alcantarilla",40,500,60,TRUE,-85.628042,10.989586
+"H5","Mamíferos — borde de bosque, sin estructuras",26,500,60,FALSE,-85.588357,10.878339
+"H6","Reptiles — zona abierta, sin estructuras",46,500,60,FALSE,-85.628246,11.036706
