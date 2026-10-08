@@ -155,27 +155,55 @@ tabla_a_sf <- function(df, crs) {
   sf::st_as_sf(df, coords = c("x", "y"), crs = crs, remove = FALSE)
 }
 
-# ── Preparar la red: CRS métrico, línea continua, orientación ─
-# Si los segmentos forman una sola línea continua, se orienta:
-# km 0 en el extremo sur (vías norte-sur) o en el oeste (este-oeste).
+# ── Preparar la red: CRS métrico, tramos continuos, orientación ─
+# La red se separa en TRAMOS: líneas continuas sin cruces. Si la red
+# tiene cruces, cada pedazo entre cruces es un tramo. Cada tramo se
+# orienta: km 0 en el extremo sur (tramos norte-sur) o en el oeste
+# (este-oeste). Los tramos se numeran según la posición de su km 0.
+# Compatibilidad: 'linea' y 'continua' significan lo mismo que antes;
+# con un solo tramo, tramo 1 = la ruta completa.
 preparar_red <- function(red, crs) {
   red   <- sf::st_transform(red, crs)
-  linea <- sf::st_line_merge(sf::st_union(sf::st_geometry(red)))
-  continua <- identical(as.character(sf::st_geometry_type(linea)), "LINESTRING")
+  union <- sf::st_line_merge(sf::st_union(sf::st_geometry(red)))
+  continua <- identical(as.character(sf::st_geometry_type(union)), "LINESTRING")
 
-  if (continua) {
-    xy <- sf::st_coordinates(linea)[, 1:2]
-    d  <- xy[nrow(xy), ] - xy[1, ]
-    invertir <- if (abs(d[2]) >= abs(d[1])) d[2] < 0 else d[1] < 0
-    if (invertir) linea <- sf::st_reverse(linea)
-  }
+  partes <- if (continua) union else sf::st_cast(union, "LINESTRING")
+  partes <- sf::st_sfc(lapply(seq_along(partes), function(i) {
+    orientar_linea(partes[i])[[1]]
+  }), crs = sf::st_crs(red))
+
+  # numeración estable: por la posición del km 0 de cada tramo
+  inicio <- t(vapply(seq_along(partes), function(i) {
+    sf::st_coordinates(partes[i])[1, 1:2]
+  }, numeric(2)))
+  rango <- apply(inicio, 2, function(v) diff(range(v)))
+  orden <- if (rango[2] >= rango[1]) order(inicio[, 2], inicio[, 1]) else
+    order(inicio[, 1], inicio[, 2])
+  partes <- partes[orden]
+
+  tramos <- sf::st_sf(
+    tramo       = seq_along(partes),
+    longitud_km = round(as.numeric(sf::st_length(partes)) / 1000, 3),
+    geometry    = partes
+  )
 
   list(
     segmentos   = red,
-    linea       = linea,
+    linea       = if (continua) partes[1] else union,
     continua    = continua,
+    tramos      = tramos,
+    n_tramos    = nrow(tramos),
     longitud_km = as.numeric(sum(sf::st_length(red))) / 1000
   )
+}
+
+# Orienta una línea: km 0 en el extremo sur (si corre norte-sur) o
+# en el oeste (si corre este-oeste)
+orientar_linea <- function(linea) {
+  xy <- sf::st_coordinates(linea)[, 1:2]
+  d  <- xy[nrow(xy), ] - xy[1, ]
+  invertir <- if (abs(d[2]) >= abs(d[1])) d[2] < 0 else d[1] < 0
+  if (invertir) sf::st_reverse(linea) else linea
 }
 
 # ── Posición a lo largo de una línea (km desde su inicio) ──
@@ -201,7 +229,8 @@ km_en_linea <- function(linea, pts) {
 # ── Ajuste de registros a la vía (snapping) ────────────────
 # Mueve cada punto al punto más cercano de la red, calcula la
 # distancia original y marca como excluidos los que superan la
-# tolerancia. Si la red es continua, calcula también el km.
+# tolerancia. Asigna a cada punto su tramo y su km dentro del tramo
+# (con un solo tramo: tramo 1 y el km a lo largo de toda la ruta).
 ajustar_a_red <- function(pts, red_prep, tolerancia_m) {
   pts <- sf::st_transform(pts, sf::st_crs(red_prep$segmentos))
   seg <- sf::st_geometry(red_prep$segmentos)
@@ -216,10 +245,15 @@ ajustar_a_red <- function(pts, red_prep, tolerancia_m) {
   res <- pts
   res$dist_via_m <- round(dist, 1)
   res$dentro     <- dist <= tolerancia_m
-  res$km <- if (red_prep$continua) {
-    round(km_en_linea(red_prep$linea, sobre_via), 3)
-  } else {
-    NA_real_
+
+  # tramo más cercano y km dentro de ese tramo
+  tramos <- sf::st_geometry(red_prep$tramos)
+  res$tramo <- if (length(tramos) == 1) 1L else
+    as.integer(sf::st_nearest_feature(sobre_via, tramos))
+  res$km <- NA_real_
+  for (t in unique(res$tramo)) {
+    i <- which(res$tramo == t)
+    res$km[i] <- round(km_en_linea(tramos[t], sobre_via[i]), 3)
   }
   res <- sf::st_set_geometry(res, sobre_via)
 
