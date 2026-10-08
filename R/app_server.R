@@ -15,6 +15,9 @@ app_server <- function(input, output, session) {
   # Puntos críticos por segmentos (Getis-Ord Gi*)
   gistar <- mod_gistar_server("gistar", datos = datos_ajustados, escala = escala)
 
+  # Relación entre atropellos y estructuras (alcantarillas, puentes…)
+  mod_estructuras_server("estructuras", datos = datos_ajustados)
+
   mod_acerca_de_server("acerca_de")
 
   session$onSessionEnded(function() {})

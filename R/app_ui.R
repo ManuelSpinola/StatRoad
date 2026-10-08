@@ -43,6 +43,11 @@ app_ui <- function() {
         icon  = bsicons::bs_icon("grid-1x2"),
         mod_gistar_ui("gistar")
       ),
+      bslib::nav_panel(
+        title = "Estructuras",
+        icon  = bsicons::bs_icon("bricks"),
+        mod_estructuras_ui("estructuras")
+      ),
 
       bslib::nav_spacer(),
 
