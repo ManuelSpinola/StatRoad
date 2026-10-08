@@ -4341,7 +4341,7 @@
       "checksum": "eb92c343317398f6a3deebd8def2b87f"
     },
     "R/app_server.R": {
-      "checksum": "0a6dbdb000d7f57dfa091f58a504d497"
+      "checksum": "b47c32b3288f78dfdd559f089ce0ecf5"
     },
     "R/app_ui.R": {
       "checksum": "35d58bc18d712e4b6500ff700a0d03b3"
@@ -4350,7 +4350,7 @@
       "checksum": "6c3a1a5f1ffb58fbb93caf326339ac8b"
     },
     "R/fct_estructuras.R": {
-      "checksum": "f25c72f25c6c9256fed133cf9ed277ce"
+      "checksum": "4cb1fdea8b1b68f70371e8f2a0181c9e"
     },
     "R/helpers.R": {
       "checksum": "9db2908326216ff1897079235fc20f4d"
@@ -4368,7 +4368,7 @@
       "checksum": "9cc88e6c02c7603b5bfa8437f03e619e"
     },
     "R/mod_estructuras.R": {
-      "checksum": "d09dd131b30ee96b145eb333f5760e87"
+      "checksum": "f9555e21bce70d3f6dfb44781e93e787"
     },
     "R/mod_gistar.R": {
       "checksum": "97895acffe29b67d6af8d8f9cd60772f"
