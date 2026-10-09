@@ -3,10 +3,12 @@
 # StatRoad · StatSuite · Manuel Spínola · ICOMVIS · UNA
 #
 # Usa los registros ajustados a la vía por mod_datos_red.
-# spNetwork::kfunctions() (Okabe & Yamada 2001): funciones K y g
-# en red con envolventes de Monte Carlo. Define la escala a la que
-# se agrupan los atropellos, que guía el ancho de banda del KDE en
-# red y el largo de los segmentos del Gi*.
+# Funciones K y g (correlación de pares) con envolventes de Monte
+# Carlo. Ruta continua: cálculo exacto con distancias por la vía y
+# g como razón observado / esperado. Red con ramales:
+# spNetwork::kfunctions() (Okabe & Yamada 2001). Define la escala a
+# la que se agrupan los atropellos, que guía el ancho de banda del
+# KDE en red y el largo de los segmentos del Gi*.
 # ============================================================
 
 # ── UI ────────────────────────────────────────────────────
@@ -27,49 +29,89 @@ mod_escala_ui <- function(id) {
           style = "max-width: 780px; margin: 0 auto;",
           h5("¿A qué distancia se agrupan los atropellos?",
              style = paste0("color:", colores$primario, "; font-weight:700;")),
+
+          # 1. La pregunta
           p(
             "Antes de buscar puntos críticos hay que responder una pregunta ",
-            "previa: ", strong("¿los atropellos están agrupados, y a qué escala?"),
-            " Si están repartidos al azar a lo largo de la vía, no hay puntos ",
-            "críticos que buscar. Si están agrupados, la distancia a la que se ",
-            "agrupan define el tamaño de los tramos que conviene analizar."
+            "previa: ", strong("¿los atropellos están agregados o repartidos al ",
+            "azar a lo largo de la vía? Y si están agregados, ¿a qué distancia?"),
+            " Si están al azar, no hay puntos críticos que buscar. Si están ",
+            "agregados, la distancia a la que se agregan indica el tamaño típico ",
+            "de un punto crítico y orienta el ancho de banda del KDE y el largo ",
+            "de los segmentos del Gi*."
           ),
+
+          # 2. El radio en una vía
+          h6(class = "mt-4 fw-bold", "1. Un radio medido por la vía"),
           p(
-            "La ", strong("función K de Ripley en red"), " (Okabe & Yamada 2001) ",
-            "cuenta, para cada radio ", em("r"), ", cuántos atropellos hay en ",
-            "promedio a menos de ", em("r"), " metros ", strong("medidos a lo largo de la vía"),
-            " de cada atropello (en una ruta, hacia un lado y hacia el otro):"
+            "Alrededor de cada atropello se mide un radio ", em("r", .noWS = "after"), ", siempre ",
+            strong("a lo largo de la vía"), " y no en línea recta. Como la vía es ",
+            "una línea, el radio se mide ", strong("hacia un lado y hacia el otro"),
+            " del atropello."
           ),
-          helpText(
-            "$$\\hat{K}(r) = \\frac{L_T}{n(n-1)} \\sum_{i=1}^{n} \\sum_{j \\neq i} \\mathbf{1}\\left(d_{ij} \\le r\\right)$$"
+
+          # 3. K y g
+          h6(class = "mt-4 fw-bold", "2. Dos formas de contar: K y g"),
+          tags$ul(
+            tags$li(strong("K(r)"), " (función K de Ripley): cuántos atropellos hay, ",
+                    "en promedio, ", strong("dentro"), " del radio, de 0 a ", em("r", .noWS = "after"),
+                    ". Es acumulativa: arrastra lo que pasa a distancias cortas."),
+            tags$li(strong("g(r)"), " (función de correlación de pares): cuántos hay ",
+                    "solo en un ", strong("anillo"), " alrededor de ", em("r", .noWS = "after"),
+                    ". Por eso indica ", strong("a qué distancia"),
+                    " se agregan los atropellos.")
+          ),
+
+          # 4. La ventana móvil
+          h6(class = "mt-4 fw-bold", "3. g es una ventana móvil"),
+          p(
+            "El anillo funciona como una ", strong("ventana de tamaño fijo"),
+            " (el ancho del anillo, por ejemplo 200 m) que se aleja del atropello ",
+            "paso a paso (el intervalo entre radios, por ejemplo 50 m) hasta el ",
+            "radio máximo (por ejemplo 3000 m). En cada posición se cuentan los ",
+            "atropellos que caen dentro de la ventana: cada posición es un punto ",
+            "de la curva. La ventana nunca cambia de tamaño; lo que cambia es ",
+            strong("a qué distancia del atropello"), " está."
+          ),
+          plotOutput(ns("fig_ventana"), height = "330px"),
+          p(class = "small text-muted mt-2",
+            "Es la misma idea de las ventanas móviles de la ecología del paisaje, ",
+            "con una diferencia: aquí la ventana no recorre un mapa, sino las ",
+            "distancias entre atropellos. El resultado no es un mapa, sino una ",
+            "curva que dice a qué distancia se agregan."),
+
+          # 5. Comparación con el azar
+          h6(class = "mt-4 fw-bold", "4. ¿Con qué se compara?"),
+          p(
+            "Se colocan muchas veces atropellos ", strong("al azar sobre la misma vía"),
+            " (con el mismo número de registros) y se calculan K y g para cada ",
+            "simulación. La ", strong("banda gris"), " del gráfico es el rango que ",
+            "produce el azar. En una ruta continua, g se muestra como ",
+            strong("razón observado / esperado", .noWS = "after"), ": 1 es lo que se espera por azar, ",
+            "2 es el doble de pares de lo esperado."
           ),
           tags$ul(
-            class = "small",
-            tags$li(tags$b("Lₜ"), " = longitud total de la red"),
-            tags$li(tags$b("n"), " = número de atropellos"),
-            tags$li(tags$b("dᵢⱼ"), " = distancia por la red entre los atropellos ", em("i"), " y ", em("j"))
+            tags$li(strong("Curva por encima de la banda:"), " a esa distancia hay ",
+                    "más atropellos juntos de lo esperado (", strong("agregación", .noWS = "outside"), ")."),
+            tags$li(strong("Dentro de la banda:"), " no se distingue del azar."),
+            tags$li(strong("Por debajo de la banda:"), " hay menos de lo esperado ",
+                    "(atropellos más espaciados); es raro en atropellos.")
           ),
-          p(
-            "La ", strong("función g"), " es su versión \"por anillos\": en vez de ",
-            "contar todo lo que hay hasta ", em("r"), ", cuenta solo lo que hay ",
-            strong("alrededor de"), " ", em("r"), ". Por eso muestra con más claridad ",
-            em("a qué distancia"), " ocurre la agregación, mientras que K acumula."
+
+          # 6. Lo que no dice
+          div(
+            class = "alert alert-info small mt-3",
+            bs_icon("info-circle", class = "me-1"),
+            strong("Lo que g no dice: "),
+            "g muestra si hay agregación y a qué escala, pero ", strong("no por qué", .noWS = "after"),
+            ". Los atropellos pueden agregarse porque un evento atrae a otros ",
+            "(contagio) o, mucho más a menudo, porque el ambiente no es igual en ",
+            "toda la vía: se concentran donde cruzan los animales (una quebrada, ",
+            "un parche de bosque, una alcantarilla). K y g no distinguen esas dos ",
+            "causas. Dónde están los grupos lo muestran los ", strong("puntos críticos"),
+            " (KDE y Gi*); qué los explica se explora en ", strong("Estructuras", .noWS = "after"), "."
           ),
-          card(
-            fill = FALSE,
-            class = "mt-3",
-            card_header(bs_icon("shuffle", class = "me-1"),
-                        "¿Con qué se compara? Envolventes de Monte Carlo"),
-            card_body(
-              p(class = "small mb-0",
-                "Se simulan muchas veces atropellos ", strong("al azar sobre la misma red"),
-                " (con el mismo número de eventos) y se calcula K y g para cada ",
-                "simulación. La banda gris del gráfico es el rango que produce el azar. ",
-                "Donde la curva observada queda ", strong("por encima de la banda"),
-                ", hay más atropellos cercanos de lo esperable por azar: ",
-                strong("agregación"), ". Por debajo: dispersión (regularidad).")
-            )
-          ),
+
           div(
             class = "alert alert-warning small mt-3 mb-0",
             bs_icon("exclamation-triangle", class = "me-1"),
@@ -78,6 +120,34 @@ mod_escala_ui <- function(id) {
             "Al revisar muchas distancias a la vez, es normal que alguna salga de la ",
             "banda por azar. Confía en patrones consistentes a lo largo de un ",
             "rango de distancias, no en un punto aislado."
+          ),
+
+          # 7. Fórmulas (para quien las quiera)
+          card(
+            fill = FALSE,
+            class = "mt-3",
+            card_header(bs_icon("calculator", class = "me-1"), "Las fórmulas"),
+            card_body(
+              class = "small",
+              helpText(
+                "$$\\hat{K}(r) = \\frac{L_T}{n(n-1)} \\sum_{i=1}^{n} \\sum_{j \\neq i} \\mathbf{1}\\left(d_{ij} \\le r\\right)$$"
+              ),
+              helpText(
+                "$$\\hat{g}(r) = \\frac{L_T}{n(n-1)} \\sum_{i=1}^{n} \\sum_{j \\neq i} \\mathbf{1}\\left(r - \\tfrac{w}{2} < d_{ij} \\le r + \\tfrac{w}{2}\\right)$$"
+              ),
+              tags$ul(
+                tags$li(tags$b("Lₜ"), " = longitud total de la vía"),
+                tags$li(tags$b("n"), " = número de atropellos"),
+                tags$li(tags$b("dᵢⱼ"), " = distancia por la vía entre los atropellos ",
+                        em("i"), " y ", em("j")),
+                tags$li(tags$b("w"), " = ancho del anillo")
+              ),
+              p("En una ruta continua de largo L, la distancia entre dos atropellos ",
+                "colocados al azar cumple P(d ≤ t) = 1 − (1 − t/L)². Con eso se ",
+                "calcula exactamente el valor esperado de g por azar, y la curva se ",
+                "muestra como ĝ(r) / E[g(r)]. Esta razón corrige también los ",
+                "primeros radios, donde el anillo se recorta en 0.")
+            )
           )
         )
       )
@@ -139,10 +209,10 @@ mod_escala_ui <- function(id) {
                 tags$ul(
                   class = "mb-1 ps-3",
                   tags$li(strong("K(r):"), " cuántos atropellos hay, en promedio, ",
-                          strong("dentro"), " de ese radio (de 0 a ", em("r"),
+                          strong("dentro"), " de ese radio (de 0 a ", em("r", .noWS = "after"),
                           "). Es acumulativa."),
                   tags$li(strong("g(r):"), " cuántos hay solo en un ", strong("anillo"),
-                          " alrededor de ", em("r"), ". Indica ", strong("a qué distancia"),
+                          " alrededor de ", em("r", .noWS = "after"), ". Indica ", strong("a qué distancia"),
                           " se agrupan los atropellos.")
                 ),
                 p(class = "mb-0",
@@ -158,9 +228,12 @@ mod_escala_ui <- function(id) {
               p(class = "small text-muted mt-n2 mb-3",
                 "Cada punto de la curva g cuenta los atropellos que están a una ",
                 "distancia ", em("r"), " ± la mitad de este ancho (con 200 m: entre ",
-                em("r"), " − 100 y ", em("r"), " + 100 m). Como la vía es una línea, ",
-                "el \"anillo\" son dos tramos de vía, uno hacia cada lado del ",
-                "atropello. Muy angosto = curva ruidosa; muy ancho = se parece a K."),
+                em("r"), " − 100 y ", em("r"), " + 100 m), hacia un lado y hacia el ",
+                "otro de cada atropello. Funciona como el ancho de las barras de un ",
+                "histograma: ", strong("muy angosto"), " = caen pocos pares en cada ",
+                "ventana y la curva sale irregular; ", strong("muy ancho"), " = cada ",
+                "ventana abarca casi todo y se pierde el detalle de a qué distancia ",
+                "se agrupan los atropellos. Entre 100 y 300 m suele funcionar bien."),
               numericInput(ns("dist_max"), "Radio máximo (m)",
                            value = 3000, min = 200, max = 20000, step = 100),
               p(class = "small text-muted mt-n2 mb-3",
@@ -206,10 +279,13 @@ mod_escala_ui <- function(id) {
                 bs_icon("lightbulb", class = "me-1"),
                 strong("Cómo leer este gráfico: "),
                 "la línea es la función g observada y la banda gris, el rango del ",
-                "azar. Las distancias donde la línea queda ", strong("por encima"),
+                "azar. En una ruta continua, g se muestra como ", strong("razón ",
+                "observado / esperado"), ": 1 (línea discontinua) es lo que se ",
+                "espera por azar, 2 es el doble de pares de lo esperado y 0,5 la ",
+                "mitad. Las distancias donde la línea queda ", strong("por encima"),
                 " de la banda (marcadas en naranja) son las distancias a las que los ",
                 "atropellos están más juntos de lo esperable. El tramo donde ",
-                "termina esa zona indica el ", strong("tamaño típico de los grupos"), ".",
+                "termina esa zona indica el ", strong("tamaño típico de los grupos", .noWS = "after"), ".",
                 tags$br(), tags$br(),
                 bs_icon("info-circle", class = "me-1"),
                 "Si después de esa zona la línea queda ", strong("por debajo"),
@@ -411,6 +487,9 @@ mod_escala_server <- function(id, datos) {
                         session = session)
     })
 
+    # Figura didáctica de "¿Qué es?" (valores por defecto: 200 m y 3000 m)
+    output$fig_ventana <- renderPlot(figura_ventana(), res = 96)
+
     # ────────────────────────────────────────────────────
     # RESULTADOS
     # ────────────────────────────────────────────────────
@@ -508,11 +587,20 @@ mod_escala_server <- function(id, datos) {
           "sims  <- replicate(", p$nsim, ", k_g_ruta(runif(length(x), 0, L), L, r, w = ",
           p$ancho_g, ")$g)\n",
           "banda <- apply(sims, 1, quantile, probs = c(0.025, 0.975))\n\n",
-          "plot(r, obs$g, type = \"l\", lwd = 2, ylim = range(c(obs$g, banda)),\n",
-          "     xlab = \"Distancia por la vía (m)\", ylab = \"g(r)\")\n",
-          "polygon(c(r, rev(r)), c(banda[1, ], rev(banda[2, ])),\n",
+          "# Valor esperado de g bajo azar (exacto): con dos puntos al azar en\n",
+          "# [0, L], P(d <= t) = 1 - (1 - t/L)^2\n",
+          "acum <- function(t) 1 - (1 - pmin(pmax(t, 0), L) / L)^2\n",
+          "esp  <- L * (acum(r + ", p$ancho_g, " / 2) - acum(r - ", p$ancho_g, " / 2))\n\n",
+          "# g como razón observado / esperado (1 = azar)\n",
+          "oe <- obs$g / esp\n",
+          "banda_oe <- sweep(banda, 2, esp, \"/\")\n\n",
+          "plot(r, oe, type = \"n\", ylim = range(c(oe, banda_oe)),\n",
+          "     xlab = \"Radio r, medido por la vía (m)\",\n",
+          "     ylab = \"g(r): observado / esperado\")\n",
+          "polygon(c(r, rev(r)), c(banda_oe[1, ], rev(banda_oe[2, ])),\n",
           "        col = adjustcolor(\"grey\", 0.5), border = NA)\n",
-          "lines(r, obs$g, lwd = 2, col = \"#1170AA\")\n"
+          "abline(h = 1, lty = 2)\n",
+          "lines(r, oe, lwd = 2, col = \"#1170AA\")\n"
         ))
       }
 
@@ -566,6 +654,16 @@ k_g_ruta <- function(x, L, r, w) {
   )
 }
 
+# Valor esperado de g(r) bajo azar uniforme en [0, L] (exacto).
+# Con dos puntos al azar en [0, L], la distancia d = |x_i - x_j| tiene
+# P(d <= t) = 1 - (1 - t/L)^2. Con la normalización de k_g_ruta,
+# E[g(r)] = L · P(a < d <= b), con a = max(r - w/2, 0) y b = r + w/2.
+# Incluye el efecto de borde de la ruta y el recorte del anillo en 0.
+esperado_g_ruta <- function(L, r, w) {
+  acum <- function(t) 1 - (1 - pmin(pmax(t, 0), L) / L)^2
+  L * (acum(r + w / 2) - acum(r - w / 2))
+}
+
 # Funciones observadas + envolventes de Monte Carlo (azar uniforme en [0, L])
 calcular_k_ruta <- function(x, L, dist_max, paso, ancho_g, nsim) {
   r   <- seq(0, dist_max, by = paso)
@@ -585,6 +683,12 @@ calcular_k_ruta <- function(x, L, dist_max, paso, ancho_g, nsim) {
     obs_k = obs$k, lower_k = ek[1, ], upper_k = ek[2, ],
     obs_g = obs$g, lower_g = eg[1, ], upper_g = eg[2, ]
   )
+  # g como razón observado / esperado (1 = azar)
+  esp <- esperado_g_ruta(L, r, ancho_g)
+  valores$esperado_g <- esp
+  valores$oe_obs_g   <- valores$obs_g   / esp
+  valores$oe_lower_g <- valores$lower_g / esp
+  valores$oe_upper_g <- valores$upper_g / esp
   list(valores = valores, escala = resumir_escala(valores), metodo = "ruta")
 }
 
@@ -643,23 +747,74 @@ texto_escala <- function(r) {
 }
 
 # Gráfico de K o g con envolvente; resalta distancias con agregación.
+# En una ruta continua, g se muestra como razón observado / esperado
+# (1 = azar). En redes con ramales (spNetwork) no se dispone del
+# valor esperado y g se muestra en su escala original.
 grafico_funcion <- function(v, tipo = c("g", "k")) {
   tipo <- match.arg(tipo)
+  razon <- tipo == "g" && "oe_obs_g" %in% names(v)
+  pre <- if (razon) "oe_" else ""
   df <- data.frame(
     d   = v$distances,
-    obs = v[[paste0("obs_", tipo)]],
-    lo  = v[[paste0("lower_", tipo)]],
-    hi  = v[[paste0("upper_", tipo)]]
+    obs = v[[paste0(pre, "obs_", tipo)]],
+    lo  = v[[paste0(pre, "lower_", tipo)]],
+    hi  = v[[paste0(pre, "upper_", tipo)]]
   )
   df$agregado <- df$obs > df$hi
-  etiqueta <- if (tipo == "g") "g(r)" else "K(r)"
+  etiqueta <- if (razon) "g(r): observado / esperado" else
+    if (tipo == "g") "g(r)" else "K(r)"
 
   ggplot(df, aes(x = d)) +
+    {if (razon) geom_hline(yintercept = 1, linetype = "dashed",
+                           color = colores$texto)} +
     geom_ribbon(aes(ymin = lo, ymax = hi), fill = colores$tableau[3], alpha = 0.45) +
     geom_line(aes(y = obs), color = colores$primario, linewidth = 1) +
     geom_point(data = df[df$agregado, ], aes(y = obs),
                color = colores$acento, size = 1.8) +
     labs(x = "Radio r, medido por la vía (m)", y = etiqueta,
-         caption = "Banda gris: envolvente de Monte Carlo (95 %). Puntos naranja: agregación.") +
+         caption = paste0(
+           "Banda gris: envolvente de Monte Carlo (95 %). Puntos naranja: agregación.",
+           if (razon) "\nLínea discontinua: 1 = lo esperado por azar.")) +
     theme_light(base_size = 13)
+}
+
+# Figura didáctica: la ventana (anillo) de ancho fijo que se aleja del
+# atropello hasta el radio máximo. Se muestra en "¿Qué es?".
+figura_ventana <- function(ancho = 200, r_max = 3000,
+                           radios = c(500, 1500, 3000)) {
+  media <- ancho / 2
+  etq <- paste0("r = ", radios, " m  →  ventana de ", radios - media,
+                " a ", radios + media, " m (hacia cada lado)")
+  d <- data.frame(panel = factor(etq, levels = etq), r = radios)
+  ventanas <- rbind(
+    data.frame(panel = d$panel, xmin = d$r - media,  xmax = d$r + media),
+    data.frame(panel = d$panel, xmin = -d$r - media, xmax = -d$r + media)
+  )
+  lim <- r_max + media
+
+  ggplot() +
+    annotate("rect", xmin = -lim, xmax = lim, ymin = -0.06, ymax = 0.06,
+             fill = "grey80") +
+    geom_rect(data = ventanas, aes(xmin = xmin, xmax = xmax),
+              ymin = -0.35, ymax = 0.35, fill = colores$acento, alpha = 0.85) +
+    annotate("point", x = 0, y = 0, size = 4, color = colores$primario) +
+    annotate("text", x = 0, y = 0.62, label = "atropello", size = 3.6,
+             color = colores$primario) +
+    geom_vline(xintercept = c(-r_max, r_max), linetype = "dashed",
+               color = "grey40") +
+    annotate("text", x = r_max, y = 0.62, label = "radio máximo", size = 3.3,
+             color = "grey40", hjust = 1.05) +
+    geom_segment(data = d, aes(x = 0, xend = r), y = -0.6, yend = -0.6,
+                 arrow = grid::arrow(length = grid::unit(2, "mm")),
+                 color = colores$primario) +
+    geom_text(data = d, aes(x = r / 2, label = paste0("r = ", r, " m")),
+              y = -0.85, size = 3.6, color = colores$primario) +
+    facet_wrap(~panel, ncol = 1) +
+    scale_x_continuous("Distancia por la vía desde el atropello (m)",
+                       breaks = seq(-r_max, r_max, by = 1000), labels = abs) +
+    coord_cartesian(ylim = c(-1, 0.8)) +
+    theme_minimal(base_size = 12) +
+    theme(axis.text.y = element_blank(), axis.title.y = element_blank(),
+          panel.grid = element_blank(),
+          strip.text = element_text(hjust = 0, face = "bold"))
 }
