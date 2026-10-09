@@ -147,7 +147,7 @@ mod_escala_ui <- function(id) {
                 ),
                 p(class = "mb-0",
                   "Ambas se comparan con atropellos colocados al azar sobre la misma ",
-                  "vía. La explicación completa está en ", em("¿Qué es?"), ".")
+                  "vía. La explicación completa la puedes leer en \"¿Qué es?\".")
               ),
               uiOutput(ns("selector_grupo")),
               p(class = "small text-muted mt-n2 mb-3",
