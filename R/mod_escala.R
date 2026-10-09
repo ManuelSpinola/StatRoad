@@ -115,11 +115,16 @@ mod_escala_ui <- function(id) {
           div(
             class = "alert alert-warning small mt-3 mb-0",
             bs_icon("exclamation-triangle", class = "me-1"),
-            strong("Precaución: "),
-            "la banda se construye distancia por distancia (envolvente puntual). ",
-            "Al revisar muchas distancias a la vez, es normal que alguna salga de la ",
-            "banda por azar. Confía en patrones consistentes a lo largo de un ",
-            "rango de distancias, no en un punto aislado."
+            strong("¿Por qué una banda global? "),
+            "La curva se evalúa en muchos radios a la vez (61 con los valores ",
+            "por defecto). Si la banda se construyera radio por radio, con 95 % en ",
+            "cada uno, casi siempre algún punto saldría de ella por puro azar, ",
+            "como quien lanza una moneda 61 veces y siempre encuentra algo raro. ",
+            "Por eso en una ruta continua la banda es ", strong("global", .noWS = "after"),
+            ": cubre toda la curva a la vez, con 5 % de error en total (prueba de ",
+            "envolvente global, paquete GET). En redes con ramales (spNetwork) la ",
+            "banda es puntual: ahí, confía solo en patrones que se mantienen a lo ",
+            "largo de varios radios seguidos."
           ),
 
           # 7. Fórmulas (para quien las quiera)
@@ -248,12 +253,12 @@ mod_escala_ui <- function(id) {
                 em("r"), " = 0, 50, 100… hasta el radio máximo. Más pequeño = ",
                 "curva más detallada pero más lenta."),
               numericInput(ns("nsim"), "Simulaciones de Monte Carlo",
-                           value = 99, min = 19, max = 999, step = 10),
+                           value = 1999, min = 199, max = 9999, step = 100),
               p(class = "small text-muted mt-n2 mb-3",
                 "Cuántas veces se colocan los atropellos al azar sobre la ruta para ",
-                "construir la banda. 99 es un buen valor. El tiempo crece con el ",
-                "número de registros: con ~1000 registros, 99 simulaciones tardan ",
-                "unos 10 segundos y 999, unos 2 minutos."),
+                "construir la banda. La banda es global (cubre toda la curva a la ",
+                "vez) y necesita muchas simulaciones: se recomiendan 1999 o más. ",
+                "Con ~1300 registros tardan unos 20 segundos."),
               actionButton(ns("ejecutar"), "Calcular K y g",
                            class = "btn-primary w-100 mt-2",
                            icon = icon("play"))
@@ -280,7 +285,7 @@ mod_escala_ui <- function(id) {
                 strong("Cómo leer este gráfico: "),
                 "la línea es la función g observada y la banda gris, el rango del ",
                 "azar. En una ruta continua, g se muestra como ", strong("razón ",
-                "observado / esperado"), ": 1 (línea discontinua) es lo que se ",
+                "observado / esperado", .noWS = "after"), ": 1 (línea discontinua) es lo que se ",
                 "espera por azar, 2 es el doble de pares de lo esperado y 0,5 la ",
                 "mitad. Las distancias donde la línea queda ", strong("por encima"),
                 " de la banda (marcadas en naranja) son las distancias a las que los ",
@@ -423,8 +428,13 @@ mod_escala_server <- function(id, datos) {
         return()
       }
 
+      # spNetwork es mucho más lento: en redes con ramales se limita a 199
+      # simulaciones (su envolvente es puntual de todos modos).
+      nsim_red <- min(input$nsim, 199)
+      nsim_uso <- if (datos()$red_prep$continua) input$nsim else nsim_red
+
       res <- withProgress(message = "Calculando K y g en red…",
-                          detail = paste(input$nsim, "simulaciones"), value = 0.3, {
+                          detail = paste(nsim_uso, "simulaciones"), value = 0.3, {
         tryCatch({
           rp <- datos()$red_prep
           if (rp$continua) {
@@ -443,7 +453,7 @@ mod_escala_server <- function(id, datos) {
               dist_max = input$dist_max,
               paso     = input$paso,
               ancho_g  = input$ancho_g,
-              nsim     = input$nsim
+              nsim     = nsim_red
             )
           }
         }, error = function(e) {
@@ -457,7 +467,7 @@ mod_escala_server <- function(id, datos) {
       res$grupo <- grupo_sel
       res$n     <- nrow(pts)
       res$param <- list(dist_max = input$dist_max, paso = input$paso,
-                        ancho_g = input$ancho_g, nsim = input$nsim)
+                        ancho_g = input$ancho_g, nsim = nsim_uso)
       resultado(res)
     })
 
@@ -474,9 +484,7 @@ mod_escala_server <- function(id, datos) {
         ))
       }
       tagList(
-        div(class = "alert alert-info small py-2 px-3 mb-3",
-            bs_icon("check-circle-fill", class = "me-1"),
-            strong("Análisis completado. "), texto_escala(r)),
+        interpretacion_escala(r),
         actionButton(ns("ir_a_resultados"), "Ver resultados completos →",
                      class = "btn-outline-primary w-100")
       )
@@ -506,16 +514,19 @@ mod_escala_server <- function(id, datos) {
           div(class = "alert alert-warning small py-2 px-3 mb-3",
               bs_icon("exclamation-triangle", class = "me-1"),
               strong("Red con ramales: "),
-              "K y g se calcularon con spNetwork. Sus simulaciones no son ",
-              "independientes del patrón observado, por lo que la banda puede ",
-              "ser demasiado estrecha y la agregación quedar subestimada. ",
-              "Interpreta con cautela.")
+              "K y g se calcularon con spNetwork (", r$param$nsim,
+              " simulaciones). Su banda es puntual (radio por radio), así que ",
+              "algún punto aislado puede salir de ella por azar; además, sus ",
+              "simulaciones no son independientes del patrón observado. ",
+              "Interpreta con cautela y confía solo en patrones que se mantienen ",
+              "a lo largo de varios radios seguidos.")
         } else {
           div(class = "alert alert-info small py-2 px-3 mb-3",
               bs_icon("info-circle", class = "me-1"),
               strong("Ruta continua: "),
-              "cálculo exacto con distancias a lo largo de la vía y ",
-              r$param$nsim, " simulaciones al azar uniforme sobre toda la ruta.")
+              "cálculo exacto con distancias a lo largo de la vía, ",
+              r$param$nsim, " simulaciones al azar uniforme sobre toda la ruta ",
+              "y envolvente global.")
         },
       layout_columns(
         col_widths = c(3, 3, 3, 3), fill = FALSE,
@@ -526,20 +537,21 @@ mod_escala_server <- function(id, datos) {
         tarjeta_valor(if (is.na(esc$hasta)) "—" else paste(esc$hasta, "m"),
                       "Agregación hasta (g)", colores$acento),
         tarjeta_valor(r$param$nsim, "Simulaciones", colores$texto)
-      )
+      ),
+      div(class = "mt-3", interpretacion_escala(r))
       )
     })
 
     output$plot_g <- renderPlot({
       r <- resultado()
       req(r)
-      grafico_funcion(r$valores, "g")
+      grafico_funcion(r$valores, "g", global = identical(r$metodo, "ruta"))
     })
 
     output$plot_k <- renderPlot({
       r <- resultado()
       req(r)
-      grafico_funcion(r$valores, "k")
+      grafico_funcion(r$valores, "k", global = identical(r$metodo, "ruta"))
     })
 
     output$tabla_valores <- renderDT({
@@ -571,22 +583,33 @@ mod_escala_server <- function(id, datos) {
           filtro,
           "x <- ajustados$km * 1000                       # posiciones (m)\n",
           "L <- as.numeric(sf::st_length(linea))           # longitud (m)\n\n",
-          "# K y g exactos: distancia por la vía = |x_i - x_j|\n",
+          "# K y g exactos: distancia por la vía = |x_i - x_j|. Se cuentan\n",
+          "# los pares con las posiciones ordenadas (sin matriz de distancias)\n",
           "k_g_ruta <- function(x, L, r, w) {\n",
           "  n  <- length(x)\n",
-          "  ds <- sort(as.vector(dist(x)))\n",
+          "  xs <- sort(x)\n",
           "  f  <- 2 * L / (n * (n - 1))\n",
-          "  hasta <- function(t) findInterval(t, ds)\n",
+          "  hasta <- function(t) vapply(t, function(u) {\n",
+          "    if (u < 0) return(0)\n",
+          "    (sum(findInterval(xs + u, xs)) -\n",
+          "       sum(findInterval(xs - u, xs, left.open = TRUE)) - n) / 2\n",
+          "  }, numeric(1))\n",
           "  inf <- ifelse(r - w / 2 <= 0, -1, r - w / 2)\n",
           "  list(k = f * hasta(r), g = f * (hasta(r + w / 2) - hasta(inf)))\n",
           "}\n\n",
           "r   <- seq(0, ", p$dist_max, ", by = ", p$paso, ")\n",
           "obs <- k_g_ruta(x, L, r, w = ", p$ancho_g, ")\n\n",
-          "# Envolventes: ", p$nsim, " simulaciones al azar uniforme sobre la ruta\n",
+          "# ", p$nsim, " simulaciones al azar uniforme sobre la ruta\n",
           "set.seed(2026)\n",
-          "sims  <- replicate(", p$nsim, ", k_g_ruta(runif(length(x), 0, L), L, r, w = ",
-          p$ancho_g, ")$g)\n",
-          "banda <- apply(sims, 1, quantile, probs = c(0.025, 0.975))\n\n",
+          "sims <- replicate(", p$nsim, ", k_g_ruta(runif(length(x), 0, L), L, r, w = ",
+          p$ancho_g, ")$g)\n\n",
+          "# Envolvente global (una sola banda para toda la curva)\n",
+          "cs   <- GET::create_curve_set(list(r = r, obs = obs$g, sim_m = sims))\n",
+          "prueba <- GET::global_envelope_test(cs, type = \"area\",\n",
+          "                                    alternative = \"two.sided\")\n",
+          "attr(prueba, \"p\")                                # valor p\n",
+          "env   <- as.data.frame(prueba)\n",
+          "banda <- rbind(env$lo, env$hi)\n\n",
           "# Valor esperado de g bajo azar (exacto): con dos puntos al azar en\n",
           "# [0, L], P(d <= t) = 1 - (1 - t/L)^2\n",
           "acum <- function(t) 1 - (1 - pmin(pmax(t, 0), L) / L)^2\n",
@@ -641,12 +664,18 @@ mod_escala_server <- function(id, datos) {
 # Distancia por la vía = |x_i - x_j|. Misma normalización que
 # spNetwork: K(r) = L/(n(n-1)) · #pares ordenados con d <= r;
 # g(r) igual, contando pares con d en el anillo (r - w/2, r + w/2].
-# Bajo azar: K(r) ≈ 2r y g(r) ≈ 2w (menos el efecto de borde).
+# Cuenta los pares con las posiciones ordenadas (findInterval), sin
+# construir la matriz de distancias: mismos valores, mucho más rápido.
 k_g_ruta <- function(x, L, r, w) {
   n  <- length(x)
-  ds <- sort(as.vector(stats::dist(x)))        # pares no ordenados
-  f  <- 2 * L / (n * (n - 1))                  # ×2: pares ordenados
-  hasta <- function(t) findInterval(t, ds)     # nº de pares con d <= t
+  xs <- sort(x)
+  f  <- 2 * L / (n * (n - 1))
+  # nº de pares (no ordenados, i != j) con |x_i - x_j| <= t
+  hasta <- function(t) vapply(t, function(u) {
+    if (u < 0) return(0)
+    (sum(findInterval(xs + u, xs)) -
+       sum(findInterval(xs - u, xs, left.open = TRUE)) - n) / 2
+  }, numeric(1))
   inf <- ifelse(r - w / 2 <= 0, -1, r - w / 2)
   list(
     k = f * hasta(r),
@@ -664,7 +693,17 @@ esperado_g_ruta <- function(L, r, w) {
   L * (acum(r + w / 2) - acum(r - w / 2))
 }
 
-# Funciones observadas + envolventes de Monte Carlo (azar uniforme en [0, L])
+# Envolvente global de Monte Carlo (GET, tipo "area", bilateral):
+# una sola banda para toda la curva, con 5 % de error en total. Así un
+# punto aislado fuera de la banda por azar no se toma como agregación.
+envolvente_global <- function(r, obs, sim) {
+  cs  <- GET::create_curve_set(list(r = r, obs = obs, sim_m = sim))
+  res <- GET::global_envelope_test(cs, type = "area", alternative = "two.sided")
+  df  <- as.data.frame(res)
+  list(lo = df$lo, hi = df$hi, p = attr(res, "p"))
+}
+
+# Funciones observadas + envolventes globales (azar uniforme en [0, L])
 calcular_k_ruta <- function(x, L, dist_max, paso, ancho_g, nsim) {
   r   <- seq(0, dist_max, by = paso)
   obs <- k_g_ruta(x, L, r, ancho_g)
@@ -674,14 +713,13 @@ calcular_k_ruta <- function(x, L, dist_max, paso, ancho_g, nsim) {
   })
   sim_k <- vapply(sims, `[[`, numeric(length(r)), "k")
   sim_g <- vapply(sims, `[[`, numeric(length(r)), "g")
-  q <- function(m) apply(m, 1, stats::quantile, probs = c(0.025, 0.975))
-  ek <- q(sim_k)
-  eg <- q(sim_g)
+  ek <- envolvente_global(r, obs$k, sim_k)
+  eg <- envolvente_global(r, obs$g, sim_g)
 
   valores <- data.frame(
     distances = r,
-    obs_k = obs$k, lower_k = ek[1, ], upper_k = ek[2, ],
-    obs_g = obs$g, lower_g = eg[1, ], upper_g = eg[2, ]
+    obs_k = obs$k, lower_k = ek$lo, upper_k = ek$hi,
+    obs_g = obs$g, lower_g = eg$lo, upper_g = eg$hi
   )
   # g como razón observado / esperado (1 = azar)
   esp <- esperado_g_ruta(L, r, ancho_g)
@@ -689,7 +727,8 @@ calcular_k_ruta <- function(x, L, dist_max, paso, ancho_g, nsim) {
   valores$oe_obs_g   <- valores$obs_g   / esp
   valores$oe_lower_g <- valores$lower_g / esp
   valores$oe_upper_g <- valores$upper_g / esp
-  list(valores = valores, escala = resumir_escala(valores), metodo = "ruta")
+  list(valores = valores, escala = resumir_escala(valores, p = eg$p),
+       metodo = "ruta", p_g = eg$p, p_k = ek$p)
 }
 
 # Redes con ramales: spNetwork::kfunctions(). Sus envolventes pueden
@@ -725,7 +764,11 @@ calcular_k_red <- function(lineas, puntos, dist_max, paso, ancho_g, nsim) {
 }
 
 # Primer tramo continuo de distancias con g por encima de la envolvente.
-resumir_escala <- function(v) {
+# p: valor p de la prueba de envolvente global (ruta continua). Si no
+# es significativa, no se informa agregación. En redes con ramales
+# (spNetwork, envolvente puntual) p es NA.
+resumir_escala <- function(v, p = NA) {
+  if (!is.na(p) && p >= 0.05) return(list(desde = NA, hasta = NA))
   sig <- v$obs_g > v$upper_g
   sig[is.na(sig)] <- FALSE
   if (!any(sig)) return(list(desde = NA, hasta = NA))
@@ -735,22 +778,83 @@ resumir_escala <- function(v) {
   list(desde = v$distances[ini], hasta = v$distances[fin])
 }
 
-texto_escala <- function(r) {
+# Interpretación del resultado: lo técnico y lo que significa en
+# términos de colisiones. Se muestra en "Configurar análisis" y en
+# "Resultados".
+interpretacion_escala <- function(r) {
   esc <- r$escala
+  v   <- r$valores
+  fmt <- function(x) format(round(x, 1), decimal.mark = ",", nsmall = 1)
+  r_max <- max(v$distances)
+
+  txt_p <- if (!is.null(r$p_g) && !is.na(r$p_g))
+    paste0(" Prueba de envolvente global: ",
+           if (r$p_g < 0.001) "p < 0,001" else
+             paste0("p = ", format(round(r$p_g, 3), decimal.mark = ",")),
+           ".") else ""
+
+  # Sin agregación
   if (is.na(esc$desde)) {
-    return(paste0("La función g no sale de la banda del azar: no hay evidencia ",
-                  "de agregación en el rango evaluado."))
+    return(div(
+      class = "alert alert-secondary small py-2 px-3 mb-3",
+      p(class = "mb-2", bs_icon("dash-circle", class = "me-1"),
+        strong("Sin evidencia de una distribución agregada.")),
+      tags$ul(
+        class = "mb-0 ps-3",
+        tags$li(strong("Qué se encontró: "), "la función g no sale de la banda ",
+                "del azar entre 0 y ", r_max, " m.", txt_p),
+        tags$li(strong("En palabras simples: "), "los atropellos se distribuyen ",
+                "a lo largo de la vía como lo haría el azar; no se detectan grupos."),
+        tags$li(strong("Qué implica: "), "el KDE y el Gi* pueden mostrar picos, ",
+                "pero probablemente sean producto del azar. Con pocos registros la ",
+                "prueba puede no detectar grupos aunque existan, y grupos más ",
+                "grandes que el radio máximo no se ven en este rango.")
+      )
+    ))
   }
-  paste0("La función g indica agregación entre ", esc$desde, " y ", esc$hasta,
-         " m. Ese rango orienta el ancho de banda del KDE en red y el largo de ",
-         "los segmentos del Gi*.")
+
+  # Con agregación
+  rango <- v$distances >= esc$desde & v$distances <= esc$hasta
+  maximo <- if ("oe_obs_g" %in% names(v)) max(v$oe_obs_g[rango]) else NA
+  tecnico <- paste0("la función g queda por encima de la banda del azar entre ",
+                    esc$desde, " y ", esc$hasta, " m",
+                    if (!is.na(maximo))
+                      paste0(" (hasta ", fmt(maximo), " veces lo esperado)"),
+                    ".", txt_p)
+  simple <- if (esc$desde == 0) {
+    paste0("los atropellos no están repartidos al azar: ocurren en grupos de ",
+           "hasta unos ", esc$hasta, " m de carretera. A más de ", esc$hasta,
+           " m, la posición de un atropello ya no tiene relación con la de otro.")
+  } else {
+    paste0("los atropellos no están repartidos al azar: hay más pares de ",
+           "atropellos de lo esperado separados por entre ", esc$desde, " y ",
+           esc$hasta, " m de carretera.")
+  }
+
+  div(
+    class = "alert alert-info small py-2 px-3 mb-3",
+    p(class = "mb-2", bs_icon("check-circle-fill", class = "me-1"),
+      strong("Distribución agregada de colisiones.")),
+    tags$ul(
+      class = "mb-0 ps-3",
+      tags$li(strong("Qué se encontró: "), tecnico),
+      tags$li(strong("En palabras simples: "), simple),
+      tags$li(strong("Lo que todavía no sabemos: "), "cuántos grupos hay ni ",
+              "dónde están. Eso lo responden los ", strong("Puntos críticos"),
+              " (KDE y Gi*), que usan estos ", esc$hasta, " m como ancho de banda ",
+              "y largo de segmento sugeridos."),
+      tags$li(strong("Para manejo: "), esc$hasta, " m es una referencia para el ",
+              "largo de las intervenciones (cercas, señalización, reductores de ",
+              "velocidad) y de los tramos de monitoreo.")
+    )
+  )
 }
 
 # Gráfico de K o g con envolvente; resalta distancias con agregación.
 # En una ruta continua, g se muestra como razón observado / esperado
 # (1 = azar). En redes con ramales (spNetwork) no se dispone del
 # valor esperado y g se muestra en su escala original.
-grafico_funcion <- function(v, tipo = c("g", "k")) {
+grafico_funcion <- function(v, tipo = c("g", "k"), global = TRUE) {
   tipo <- match.arg(tipo)
   razon <- tipo == "g" && "oe_obs_g" %in% names(v)
   pre <- if (razon) "oe_" else ""
@@ -773,7 +877,8 @@ grafico_funcion <- function(v, tipo = c("g", "k")) {
                color = colores$acento, size = 1.8) +
     labs(x = "Radio r, medido por la vía (m)", y = etiqueta,
          caption = paste0(
-           "Banda gris: envolvente de Monte Carlo (95 %). Puntos naranja: agregación.",
+           "Banda gris: envolvente ", if (global) "global " else "puntual ",
+           "de Monte Carlo (95 %). Puntos naranja: agregación.",
            if (razon) "\nLínea discontinua: 1 = lo esperado por azar.")) +
     theme_light(base_size = 13)
 }
