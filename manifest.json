@@ -4362,13 +4362,13 @@
       "checksum": "ec42f5604c1b958076a8770219a371be"
     },
     "R/mod_datos_red.R": {
-      "checksum": "d89f447fff13b6e3c6310e872dfe6601"
+      "checksum": "f236bb48ffb9711d75ddd666bd425bb5"
     },
     "R/mod_escala.R": {
       "checksum": "3342797da807b6acaf32758a9066da2c"
     },
     "R/mod_estructuras.R": {
-      "checksum": "f9555e21bce70d3f6dfb44781e93e787"
+      "checksum": "01ee7ac697d75fdf1a4a0a032a1d7769"
     },
     "R/mod_gistar.R": {
       "checksum": "97895acffe29b67d6af8d8f9cd60772f"
@@ -4380,7 +4380,7 @@
       "checksum": "287f04c2233556b41f012539ebb32e6d"
     },
     "R/utils_espacial.R": {
-      "checksum": "c8d61e53c9ffc976c4968582f5e4d71d"
+      "checksum": "de6670b49e4f01544679b27dc91d75cd"
     },
     "R/utils_exportar.R": {
       "checksum": "4f7759584cd2905fad99011f8ea37701"

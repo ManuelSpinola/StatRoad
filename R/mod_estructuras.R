@@ -237,7 +237,15 @@ mod_estructuras_ui <- function(id) {
                     bs_icon("info-circle", class = "me-1"),
                     "Solo para tablas (CSV o Excel):"),
                   selectInput(ns("crs_coords"), "Las coordenadas x/y están en:",
-                              choices = crs_coordenadas, selected = 4326),
+                              choices = crs_coordenadas, selected = "4326"),
+                  conditionalPanel(
+                    condition = "input.crs_coords == 'otro'", ns = ns,
+                    textInput(ns("crs_coords_otro"), "Código EPSG de las coordenadas",
+                              placeholder = "por ejemplo, 32718"),
+                    p(class = "small text-muted mt-n2",
+                      "Puedes buscar el código de tu sistema en ",
+                      tags$a("epsg.io", href = "https://epsg.io", target = "_blank"), ".")
+                  ),
                   selectInput(ns("separador"), "Separador (solo CSV):",
                               choices = c("Coma (,)" = ",", "Punto y coma (;)" = ";",
                                           "Tabulador" = "\t"),
@@ -479,6 +487,10 @@ mod_estructuras_server <- function(id, datos, nkde = NULL) {
       }
     )
 
+    # El código EPSG escrito a mano se lee con una pausa, para no
+    # releer el archivo con cada tecla.
+    crs_coords_otro <- debounce(reactive(input$crs_coords_otro), 800)
+
     est_propias <- reactive({
       req(input$archivo_est)
       nombre <- input$archivo_est$name
@@ -487,7 +499,9 @@ mod_estructuras_server <- function(id, datos, nkde = NULL) {
       validar_lectura({
         if (ext %in% c("csv", "txt", "xlsx", "xls")) {
           df <- leer_tabla_atropellos(ruta, nombre, input$separador)
-          tabla_a_sf(normalizar_estructuras(df), crs = as.numeric(input$crs_coords))
+          tabla_a_sf(normalizar_estructuras(df),
+                     crs = resolver_crs(input$crs_coords, crs_coords_otro(),
+                                        metrico = FALSE))
         } else {
           capa <- leer_capa_espacial(ruta, nombre, tipo = "puntos")
           df   <- normalizar_estructuras(sf::st_drop_geometry(capa))
@@ -938,7 +952,10 @@ mod_estructuras_server <- function(id, datos, nkde = NULL) {
       codigo_estructuras(r,
                          nombre_est = if (propio) r$archivo_est else
                            basename(archivo_ejemplo("estructuras")),
-                         crs_coords = if (propio) input$crs_coords else 4326)
+                         crs_coords = if (propio) tryCatch(
+                           resolver_crs(input$crs_coords, input$crs_coords_otro,
+                                        metrico = FALSE),
+                           error = function(e) NA) else 4326)
     })
   })
 }

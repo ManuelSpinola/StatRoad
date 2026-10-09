@@ -73,8 +73,10 @@ mod_datos_red_ui <- function(id) {
             card_body(
               p(class = "small mb-0",
                 "Las distancias solo tienen sentido en un sistema ", strong("métrico"),
-                ". StatRoad reproyecta todo a ", strong("CRTM05"),
-                ", la proyección oficial de Costa Rica. Los mapas se muestran en ",
+                " (en metros). StatRoad reproyecta todo a uno: en Costa Rica, ",
+                strong("CRTM05", .noWS = "after"), ", la proyección oficial (datum CR-SIRGAS); ",
+                "en otros países, la ", strong("zona UTM"), " que corresponde a los ",
+                "datos o el código EPSG que indiques. Los mapas se muestran en ",
                 "longitud/latitud solo para dibujarlos; los cálculos siempre se hacen en metros.")
             )
           ),
@@ -195,7 +197,15 @@ mod_datos_red_ui <- function(id) {
                       bs_icon("info-circle", class = "me-1"),
                       "Solo para tablas (CSV o Excel):"),
                     selectInput(ns("crs_coords"), "Las coordenadas x/y están en:",
-                                choices = crs_coordenadas, selected = 4326),
+                                choices = crs_coordenadas, selected = "4326"),
+                    conditionalPanel(
+                      condition = "input.crs_coords == 'otro'", ns = ns,
+                      textInput(ns("crs_coords_otro"), "Código EPSG de las coordenadas",
+                                placeholder = "por ejemplo, 32718"),
+                      p(class = "small text-muted mt-n2",
+                        "Puedes buscar el código de tu sistema en ",
+                        tags$a("epsg.io", href = "https://epsg.io", target = "_blank"), ".")
+                    ),
                     selectInput(ns("separador"), "Separador (solo CSV):",
                                 choices = c("Coma (,)" = ",",
                                             "Punto y coma (;)" = ";",
@@ -234,7 +244,8 @@ mod_datos_red_ui <- function(id) {
                       class = "small text-muted mb-0",
                       tags$li(code("fecha"), " en formato AAAA-MM-DD."),
                       tags$li(code("x"), " = longitud y ", code("y"),
-                              " = latitud si usas WGS84; en CRTM05, este y norte en metros."),
+                              " = latitud si usas WGS84; en un sistema proyectado ",
+                              "(CRTM05, UTM…), este y norte en metros."),
                       tags$li(code("grupo"), " = categoría que quieras comparar ",
                               "(Mamíferos, Reptiles, Anfibios, Aves…).")
                     )
@@ -302,10 +313,23 @@ mod_datos_red_ui <- function(id) {
             card_header(bs_icon("sliders", class = "me-1"), "Parámetros"),
             card_body(
               selectInput(ns("crs_metrico"), "Sistema de coordenadas métrico",
-                          choices = crs_metricos, selected = 8908),
+                          choices = crs_metricos, selected = "8908"),
+              conditionalPanel(
+                condition = "input.crs_metrico == 'otro'", ns = ns,
+                textInput(ns("crs_metrico_otro"), "Código EPSG (en metros)",
+                          placeholder = "por ejemplo, 32718"),
+                p(class = "small text-muted mt-n2 mb-3",
+                  "Debe ser un sistema proyectado en metros. Puedes buscarlo en ",
+                  tags$a("epsg.io", href = "https://epsg.io", target = "_blank"), ".")
+              ),
               p(class = "small text-muted mt-n2 mb-3",
                 "Todo se reproyecta a este sistema antes de medir distancias. ",
-                "Usa el mismo que usan tus datos o tu institución."),
+                "En Costa Rica, CR-SIRGAS es el oficial. Usa CR05 solo si tus datos ",
+                "están en ese datum (era el oficial antes de 2018); si no sabes, usa ",
+                "CR-SIRGAS: para medir distancias la diferencia no importa. ",
+                "Fuera de Costa Rica, ", strong("UTM automático"),
+                " es la opción más simple; si tu institución usa otro sistema, ",
+                "elige \"Otro código EPSG\"."),
               sliderInput(ns("tolerancia"), "Tolerancia (m)",
                           min = 10, max = 300, value = 50, step = 5),
               p(class = "small text-muted mt-n2 mb-3",
@@ -453,6 +477,10 @@ mod_datos_red_server <- function(id) {
       )
     })
 
+    # El código EPSG escrito a mano se lee con una pausa, para no
+    # releer el archivo con cada tecla.
+    crs_coords_otro <- debounce(reactive(input$crs_coords_otro), 800)
+
     atrop_propios <- reactive({
       req(input$archivo_atrop)
       nombre <- input$archivo_atrop$name
@@ -463,7 +491,8 @@ mod_datos_red_server <- function(id) {
         if (ext %in% c("csv", "txt", "xlsx", "xls")) {
           df <- leer_tabla_atropellos(ruta, nombre, input$separador)
           tabla_a_sf(normalizar_atropellos(df),
-                     crs = as.numeric(input$crs_coords))
+                     crs = resolver_crs(input$crs_coords, crs_coords_otro(),
+                                        metrico = FALSE))
         } else {
           capa <- leer_capa_espacial(ruta, nombre, tipo = "puntos")
           df   <- normalizar_atropellos(sf::st_drop_geometry(capa))
@@ -585,10 +614,16 @@ mod_datos_red_server <- function(id) {
 
     observeEvent(input$ajustar, {
       res <- tryCatch({
-        red_prep <- preparar_red(red_activa(), crs = as.numeric(input$crs_metrico))
+        epsg     <- resolver_crs(input$crs_metrico, input$crs_metrico_otro,
+                                 capa = red_activa())
+        red_prep <- preparar_red(red_activa(), crs = epsg)
         ajuste   <- ajustar_a_red(atrop_activos(), red_prep, input$tolerancia)
         list(red_prep = red_prep, ajuste = ajuste,
-             crs = as.numeric(input$crs_metrico),
+             crs = epsg, crs_nombre = nombre_crs(epsg),
+             crs_utm = identical(input$crs_metrico, "utm"),
+             crs_coords = if (usa_propios()) tryCatch(
+               resolver_crs(input$crs_coords, input$crs_coords_otro, metrico = FALSE),
+               error = function(e) NA) else 4326,
              ejemplo = !usa_propios())
       }, error = function(e) {
         showNotification(paste("No se pudo ajustar:", conditionMessage(e)),
@@ -616,7 +651,11 @@ mod_datos_red_server <- function(id) {
             bs_icon("check-circle-fill", class = "me-1"),
             strong("Ajuste completado. "),
             nrow(a$ajustados), " registros sobre la vía; ",
-            nrow(a$excluidos), " excluidos (más de ", a$tolerancia, " m)."),
+            nrow(a$excluidos), " excluidos (más de ", a$tolerancia, " m).",
+            tags$br(),
+            paste0("Sistema de coordenadas: ", r$crs_nombre,
+                   if (isTRUE(r$crs_utm)) " (zona calculada según la ubicación de la red)",
+                   ".")),
         if (!r$red_prep$continua) {
           div(class = "alert alert-warning small py-2 px-3 mb-3",
               bs_icon("exclamation-triangle", class = "me-1"),
@@ -754,7 +793,7 @@ mod_datos_red_server <- function(id) {
         propios    = usa_propios(),
         nombre_red = if (usa_propios()) input$archivo_red$name else basename(ruta_red_ejemplo),
         nombre_atr = if (usa_propios()) input$archivo_atrop$name else basename(ruta_atrop_ejemplo),
-        crs_coords = if (usa_propios()) input$crs_coords else 4326,
+        crs_coords = r$crs_coords,
         separador  = input$separador,
         crs        = r$crs,
         tolerancia = r$ajuste$tolerancia

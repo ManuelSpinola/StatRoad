@@ -3,21 +3,88 @@
 # StatRoad · StatSuite · Manuel Spínola · ICOMVIS · UNA
 #
 # Funciones puras (sin Shiny): se pueden probar desde la consola.
-# Todos los cálculos se hacen en un CRS métrico (CRTM05).
+# Todos los cálculos se hacen en un CRS métrico (en metros): CRTM05
+# para Costa Rica, UTM o cualquier EPSG proyectado en otros países.
 # ============================================================
 
 # ── CRS disponibles ───────────────────────────────────────
-# Métricos (para el análisis)
+# Métricos (para el análisis). "utm" y "otro" se resuelven con
+# resolver_crs(): la zona UTM se calcula según la ubicación de los
+# datos; "otro" usa el código EPSG que escribe el usuario.
 crs_metricos <- c(
-  "CRTM05 — CR-SIRGAS (EPSG:8908)" = 8908,
-  "CRTM05 — CR05 (EPSG:5367)"      = 5367
+  "CRTM05 — CR-SIRGAS (EPSG:8908), oficial en Costa Rica" = "8908",
+  "CRTM05 — CR05 (EPSG:5367), datum anterior"            = "5367",
+  "UTM automático (según la ubicación de los datos)"      = "utm",
+  "Otro código EPSG…"                                     = "otro"
 )
 # Posibles CRS de las columnas x/y de una tabla
 crs_coordenadas <- c(
-  "Longitud/latitud — WGS84 (EPSG:4326)" = 4326,
-  "CRTM05 — CR-SIRGAS (EPSG:8908)"       = 8908,
-  "CRTM05 — CR05 (EPSG:5367)"            = 5367
+  "Longitud/latitud — WGS84 (EPSG:4326)" = "4326",
+  "CRTM05 — CR-SIRGAS (EPSG:8908)"       = "8908",
+  "CRTM05 — CR05 (EPSG:5367)"            = "5367",
+  "Otro código EPSG…"                    = "otro"
 )
+
+# Zona UTM (WGS84) que corresponde al centro de una capa.
+# Norte: EPSG 326xx; sur: EPSG 327xx (xx = zona 1–60).
+epsg_utm <- function(capa) {
+  caja <- sf::st_bbox(sf::st_transform(capa, 4326))   # centro de la extensión
+  lon  <- (caja[["xmin"]] + caja[["xmax"]]) / 2
+  lat  <- (caja[["ymin"]] + caja[["ymax"]]) / 2
+  zona <- min(60, floor((lon + 180) / 6) + 1)
+  as.integer(if (lat >= 0) 32600 + zona else 32700 + zona)
+}
+
+# Valida un código EPSG escrito por el usuario. Si 'metrico' es TRUE,
+# exige además un sistema proyectado en metros (para medir distancias).
+# Devuelve el código (entero) o un error con un mensaje claro.
+validar_epsg <- function(codigo, metrico = TRUE) {
+  codigo <- suppressWarnings(as.integer(trimws(as.character(codigo))))
+  if (length(codigo) != 1 || is.na(codigo) || codigo <= 0) {
+    stop("Escribe un código EPSG numérico (por ejemplo, 32718).", call. = FALSE)
+  }
+  crs <- tryCatch(suppressWarnings(sf::st_crs(codigo)), error = function(e) NULL)
+  if (is.null(crs) || is.na(crs)) {
+    stop("EPSG:", codigo, " no es un código válido. Búscalo en epsg.io.",
+         call. = FALSE)
+  }
+  if (metrico) {
+    if (isTRUE(sf::st_is_longlat(crs))) {
+      stop("EPSG:", codigo, " (", crs$Name, ") usa grados, no metros: ",
+           "no sirve para medir distancias. Elige un sistema proyectado, ",
+           "por ejemplo la zona UTM de tu país.", call. = FALSE)
+    }
+    if (codigo %in% c(3857L, 900913L, 3785L)) {
+      stop("EPSG:", codigo, " (Web Mercator) es para mapas web: deforma las ",
+           "distancias (más cuanto más lejos del ecuador). Usa la zona UTM de ",
+           "tu país o su proyección oficial.", call. = FALSE)
+    }
+    if (!identical(crs$units_gdal, "metre")) {
+      stop("EPSG:", codigo, " (", crs$Name, ") no está en metros. ",
+           "Elige un sistema proyectado en metros.", call. = FALSE)
+    }
+  }
+  codigo
+}
+
+# Resuelve la opción elegida en un selector de CRS a un código EPSG.
+# opcion: valor del selector ("8908", "utm", "otro"…); otro: el código
+# escrito por el usuario; capa: datos para calcular la zona UTM.
+resolver_crs <- function(opcion, otro = NULL, capa = NULL, metrico = TRUE) {
+  if (identical(opcion, "utm")) {
+    if (is.null(capa)) stop("Faltan datos para calcular la zona UTM.", call. = FALSE)
+    return(epsg_utm(capa))
+  }
+  if (identical(opcion, "otro")) return(validar_epsg(otro, metrico = metrico))
+  as.integer(opcion)
+}
+
+# Nombre legible de un CRS, para mensajes ("WGS 84 / UTM zone 18S")
+nombre_crs <- function(epsg) {
+  crs <- tryCatch(sf::st_crs(epsg), error = function(e) NULL)
+  if (is.null(crs) || is.na(crs)) paste0("EPSG:", epsg) else
+    paste0(crs$Name, " (EPSG:", epsg, ")")
+}
 
 columnas_atropellos <- c("especie", "grupo", "fecha")
 
